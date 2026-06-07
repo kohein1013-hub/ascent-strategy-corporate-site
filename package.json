@@ -4,11 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:lan": "LAN_DEV_ORIGINS=100.64.1.71,10.13.88.210,$(ipconfig getifaddr en0) next dev --hostname 0.0.0.0 --port 3000",
+    "dev:lan:3001": "LAN_DEV_ORIGINS=100.64.1.71,10.13.88.210,$(ipconfig getifaddr en0) next dev --hostname 0.0.0.0 --port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@paper-design/shaders": "^0.0.76",
+    "@paper-design/shaders-react": "^0.0.76",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -20,6 +26,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -1,0 +1,14 @@
+# Cursor インデックス除外（メモリ・クラッシュ防止）
+.next/
+node_modules/
+out/
+build/
+coverage/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# 作業用一時ファイル（スクリーンショット・動画フレーム）
+tmp/
+
+# 巨大ロックファイル（エージェントが誤読しないよう除外）
+package-lock.json

@@ -1,26 +1,5773 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 試験: 外周を黒寄りに。復元する場合は #080b15 に戻す */
+  --surface: #040405;
+  --text-primary: #f6f8ff;
+  --text-secondary: rgba(236, 238, 251, 0.78);
+  --line: rgba(192, 201, 255, 0.25);
+  --card-bg: rgba(8, 11, 21, 0.48);
+  --card-border: rgba(211, 217, 252, 0.22);
+  /* 十字オーバーレイの上下マージン＝英語ヒーローの左右基準（同一トークン）。1/1 基準で固定 30px */
+  --cross-inset: 30px;
+  /* 十字フォーカス・アーム（GridOverlay .cross-focus-arm と共有） */
+  --cross-arm-line-size: 1px;
+  --cross-arm-line-color: rgba(255, 255, 255, 0.95);
+  --cross-arm-line-glow: 0 0 8px rgba(255, 255, 255, 0.34);
+  /* 左レール右端とオーバーレイ左端（7分割の縦軸側）の隙間 */
+  --menu-rail-gap-from-grid: 3px;
+  /* 左右インセット = cross-inset × 係数（1/1＝1、半分なら 0.5 など） */
+  --hero-copy-inline-factor: 1;
+  --hero-copy-inline-inset: calc(
+    var(--cross-inset) * var(--hero-copy-inline-factor)
+  );
+  /* 英語ブロックを左へ寄せる：左はレール内 0、右は cross と揃えて日本語ブロック側の余白を確保 */
+  --hero-copy-inline-inset-left: 0;
+  --hero-copy-inline-inset-right: var(--hero-copy-inline-inset);
+  /* ASM ラベル: 十字フォーカス中心からのオフセット */
+  --asmn-cross-offset-x: -35px;
+  --asmn-cross-offset-y: 85px;
+  /* 十字フォーカス移動（--cross-focus-duration）完了後に ASM ラベルをリビール */
+  --cross-focus-duration: 0.72s;
+  --asmn-text-reveal-base: 720ms;
+  --hero-bilingual-reveal-delay: 0s;
+  --hero-bilingual-reveal-duration: 0.4s;
+  /*
+   * Breakpoints（数値トークン / JS: src/lib/breakpoints.ts と同期）
+   * flow max 768 … SP フローモード | grid min 769 … 十字グリッドモード
+   */
+  --bp-flow-max: 768;
+  --bp-grid-min: 769;
+  --bp-mobile-sm-max: 480;
+  --bp-tablet-max: 1024;
+  /* SectionNavigator: useViewportHeight が px で上書き（iOS dvh 回避） */
+  --app-viewport-h: 100dvh;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* grid: min-width 769px — 十字グリッド座標・ASM 絶対配置 */
+@media (min-width: 769px) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* SSR・hydrate 前のフォールバック（英語ブロックの left） */
+    --hero-copy-inline-inset-left: clamp(12px, 1.85vw, 32px);
+  }
+
+  .hero-meta {
+    min-width: 0;
+  }
+
+  /*
+   * PC 十字：横並び＋を SP 同型（7 個＋右端ダッシュ＝8 列）に揃える。
+   * SP は @media (max-width: 768px) 内の 8 列指定のまま（本ブロックは 769px+ のみ）。
+   */
+  .section-shell.company-shell {
+    --company-grid-cols: 8;
+    /* GridOverlay cross-plane と同一幅（dvw 差による横ズレを防ぐ） */
+    --company-plane-w: calc(100vw - 2 * var(--cross-inset));
+    /* ASMN のみ上へ（見出し・キャッチは変更しない） */
+    --company-asmn-lift: 23px;
+  }
+
+  .section-shell.contact-shell {
+    --contact-grid-cols: 8;
+    /* GridOverlay cross-plane と同一幅（dvw 差による横ズレを防ぐ） */
+    --contact-plane-w: calc(100vw - 2 * var(--cross-inset));
+    /* ASMN のみ上へ（見出し・キャッチの top は変更しない） */
+    --contact-asmn-lift: 23px;
+  }
+
+  /*
+   * Hero PC: 英語ブロックを十字アームから離す（SP は HeroSection の実測 left のまま）
+   */
+  .section-shell--hero {
+    --hero-copy-pc-offset-x: 25px;
+    --hero-asmn-above-title-gap: 12px;
+    --hero-asmn-pc-offset-x: 0px;
+  }
+
+  .section-shell--hero .hero-copy-group {
+    left: calc(
+      var(--hero-copy-aligned-left, var(--hero-copy-inline-inset-left)) +
+        var(--hero-copy-pc-offset-x)
+    );
   }
 }
 
+@theme inline {
+  --font-sans: var(--font-noto-sans-jp);
+  --font-serif: var(--font-noto-serif-jp);
+  /* grid モード開始（breakpoints.ts BREAKPOINT_GRID_MIN_PX）と md: を一致 */
+  --breakpoint-md: 48.0625rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: clip;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+}
+
+/* 実機 SP: ページ全体のネイティブスクロールを抑止（セクションスワイプと競合しないように） */
+@media (max-width: 768px) {
+  html,
+  body {
+    overflow: hidden;
+    overscroll-behavior: none;
+    height: 100%;
+    width: 100%;
+    touch-action: none;
+  }
+
+  .site-viewport {
+    height: var(--app-viewport-h, 100dvh);
+    overflow: hidden;
+    touch-action: none;
+  }
+}
+
+.section-navigator {
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  height: var(--app-viewport-h, 100dvh);
+}
+
+.section-frame.is-active > .section-shell.contact-shell,
+.section-frame.is-active > .section-shell.contact-shell .message-titles-stack,
+.section-frame.is-active > .section-shell.contact-shell .contact-form-wrap :is(input, textarea, button, a, label) {
+  touch-action: auto;
+}
+
+/*
+ * 1 画面 = 1 フレーム。はみ出しは隣セクション（トラック上の直下フレーム）に重なるため clip 必須。
+ */
+.section-frame {
+  position: relative;
+  height: var(--app-viewport-h, 100dvh);
+  max-height: var(--app-viewport-h, 100dvh);
+  overflow: hidden;
+  isolation: isolate;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.section-frame.is-active {
+  pointer-events: auto;
+}
+
+.section-frame > .section-shell {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+}
+
+/* Paper Shaders Grain Gradient 用。WebGL canvas は子の .paper-grain-bg__shader が全面に広がる */
+.paper-grain-bg {
+  position: fixed;
+  top: -20px;
+  bottom: -20px;
+  left: min(-5vw, -80px);
+  right: min(-5vw, -80px);
+  width: auto;
+  height: auto;
+  overflow: hidden;
+  background-color: var(--surface);
+  transform: translateZ(0);
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.paper-grain-bg__shader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* WebGL 不可時の静止グラデーション（モバイル実機フォールバック） */
+.paper-grain-bg--fallback {
+  background:
+    radial-gradient(120% 90% at 18% 22%, rgba(52, 68, 128, 0.42), transparent 58%),
+    radial-gradient(95% 75% at 82% 78%, rgba(88, 52, 108, 0.28), transparent 62%),
+    var(--surface);
+}
+
+/* SP / タブレット: WebGL 不可時の CSS グラデーションアニメーション */
+.paper-grain-bg--css {
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.paper-grain-bg__blob {
+  position: absolute;
+  inset: -18%;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.paper-grain-bg__blob--a {
+  animation: paper-grain-css-drift-a 14s ease-in-out infinite alternate;
+}
+
+.paper-grain-bg__blob--b {
+  animation: paper-grain-css-drift-b 18s ease-in-out infinite alternate;
+}
+
+.paper-grain-bg--css::before,
+.paper-grain-bg--css::after {
+  content: none;
+}
+
+@keyframes paper-grain-css-drift-a {
+  from {
+    transform: translate3d(-6%, -4%, 0) scale(1);
+    opacity: 0.82;
+  }
+
+  to {
+    transform: translate3d(8%, 6%, 0) scale(1.12);
+    opacity: 1;
+  }
+}
+
+@keyframes paper-grain-css-drift-b {
+  from {
+    transform: translate3d(5%, 3%, 0) scale(1.04);
+    opacity: 0.76;
+  }
+
+  to {
+    transform: translate3d(-7%, -8%, 0) scale(1.14);
+    opacity: 0.94;
+  }
+}
+
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  --grid-cols: 7;
+  --grid-rows: 5;
+}
+
+.cross-plane {
+  position: absolute;
+  inset: var(--cross-inset);
+  overflow: hidden;
+}
+
+.cross-grid {
+  position: absolute;
+  inset: 0;
+}
+
+.cross-mark {
+  position: absolute;
+  top: calc(var(--mark-y) * 100%);
+  left: calc(var(--mark-x) * 100%);
+  transform: translate(-50%, -50%);
+  width: 15px;
+  height: 15px;
+  opacity: 0.75;
+}
+
+.cross-mark::before,
+.cross-mark::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.cross-mark::before {
+  width: 1px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.cross-mark::after {
+  width: 100%;
+  height: 1px;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.cross-mark.is-edge-dash::before {
+  opacity: 0;
+}
+
+.cross-focus-axis {
+  position: absolute;
+  transition:
+    top var(--cross-focus-duration) cubic-bezier(0.22, 0.64, 0.18, 1),
+    left var(--cross-focus-duration) cubic-bezier(0.22, 0.64, 0.18, 1);
+  opacity: 0.75;
+}
+
+.cross-focus-axis-h {
+  top: calc(var(--focus-y) * 100%);
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.05)
+  );
+  transform: translateY(-50%);
+}
+
+.cross-focus-axis-v {
+  left: calc(var(--focus-x) * 100%);
+  top: 0;
+  height: 100%;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.05)
+  );
+  transform: translateX(-50%);
+}
+
+.cross-focus {
+  position: absolute;
+  top: calc(var(--focus-y) * 100%);
+  left: calc(var(--focus-x) * 100%);
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  transition:
+    top var(--cross-focus-duration) cubic-bezier(0.22, 0.64, 0.18, 1),
+    left var(--cross-focus-duration) cubic-bezier(0.22, 0.64, 0.18, 1);
+}
+
+.cross-focus-arm {
+  position: absolute;
+  background: var(--cross-arm-line-color);
+  box-shadow: var(--cross-arm-line-glow);
+}
+
+.cross-focus-arm.arm-top,
+.cross-focus-arm.arm-bottom {
+  left: 50%;
+  width: var(--cross-arm-line-size);
+  height: 9px;
+  transform: translateX(-50%);
+}
+
+.cross-focus-arm.arm-top {
+  top: 0;
+}
+
+.cross-focus-arm.arm-bottom {
+  bottom: 0;
+}
+
+.cross-focus-arm.arm-left,
+.cross-focus-arm.arm-right {
+  top: 50%;
+  height: var(--cross-arm-line-size);
+  width: 9px;
+  transform: translateY(-50%);
+}
+
+.cross-focus-arm.arm-left {
+  left: 0;
+}
+
+.cross-focus-arm.arm-right {
+  right: 0;
+}
+
+.cross-focus-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.94);
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.28);
+}
+
+.section-track {
+  position: relative;
+  z-index: 3;
+  transition: transform 1.02s cubic-bezier(0.22, 0.64, 0.18, 1);
+  will-change: transform;
+}
+
+/* SP: セクション侵入〜リビール開始までの待ちを短縮（PC は 1.02s のまま） */
+@media (max-width: 768px) {
+  .section-track {
+    transition-duration: 0.72s;
+  }
+
+  /*
+   * 縦スライド中: 非アクティブ Approach のタイトル帯を描画しない
+   * （Approach→Service で画面上部がガビつくのを防止）
+   */
+  .section-track.is-transitioning
+    > .section-frame:not(.is-active)
+    > .approach-shell
+    > .message-titles-stack,
+  .section-track.is-transitioning
+    > .section-frame:not(.is-active)
+    > .network-shell
+    > .network-stack
+    > .message-titles-stack,
+  .section-track.is-transitioning
+    > .section-frame:not(.is-active)
+    > .company-shell
+    > .message-titles-stack,
+  .section-track.is-transitioning
+    > .section-frame:not(.is-active)
+    > .contact-shell
+    > .message-titles-stack {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* スライド中はアクティブ枠の Company/Contact タイトル帯も描画しない（初回リビール競合防止） */
+  .section-track.is-transitioning
+    > .section-frame.is-active
+    > .company-shell:not(.company-entry-ready)
+    > .company-stack
+    > .message-titles-stack,
+  .section-track.is-transitioning
+    > .section-frame.is-active
+    > .contact-shell:not(.contact-entry-ready)
+    > .contact-stack
+    > .message-titles-stack {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /*
+   * 縦スライド中: 離脱フレームをトラック移動と逆方向に補正して画面上に固定
+   * （親 .section-track の transform があるため position:fixed はビューポート基準にならない）
+   */
+  .section-track.is-transitioning > .section-frame.is-slide-source {
+    z-index: 4;
+    pointer-events: none;
+    transition: transform 0.72s cubic-bezier(0.22, 0.64, 0.18, 1);
+    transform: translate3d(
+      0,
+      calc(
+        (var(--virtual-track-index, 0) - var(--slide-source-track-index, 0)) *
+          var(--app-viewport-h, 100dvh)
+      ),
+      0
+    ) !important;
+  }
+
+  /*
+   * 縦スライド中: 侵入予定フレームを丸ごと非表示（Service 先出し防止）
+   */
+  .section-track.is-transitioning
+    > .section-frame.is-virtual-active:not(.is-slide-source) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .section-track.is-transitioning
+    > .section-frame.is-virtual-active:not(.is-slide-source)
+    > .service-shell {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /*
+   * 縦スライド中: reveal の transition/animation を全停止（点滅しながらフェードイン防止）
+   * is-active 付け替えで opacity 0↔1 が繰り返されるのが主因。
+   */
+  .section-track.is-transitioning :is(.reveal-item, .reveal-line-inner) {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .section-track.is-transitioning > .section-frame.is-slide-source :is(.reveal-item, .reveal-line-inner) {
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    visibility: visible !important;
+  }
+
+  .section-track.is-transitioning
+    > .section-frame:is(.is-virtual-active, .is-active):not(.is-slide-source)
+    :is(.reveal-item, .reveal-line-inner) {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /*
+   * Service SP: スライド中は FV リビールを絶対に走らせない（service-fv-reveal-go 中も含む）
+   */
+  .section-track.is-transitioning
+    .service-shell:not(.service-fv-reveal-go)
+    .service-fv
+    :is(.reveal-item, .asm-cross-eyebrow) {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    animation: none !important;
+    transition: none !important;
+    pointer-events: none !important;
+  }
+
+  /*
+   * Service SP: リビール開始まで FV を描画しない（縦スライド中・停止直後の先出し防止）
+   */
+  .section-track.is-transitioning .service-shell:not(.service-fv-reveal-go) .service-fv,
+  .section-frame.is-active
+    > .service-shell:not(.service-fv-reveal-go)
+    > .service-scroll-area
+    > .service-fv,
+  .service-shell.service-fv-pending:not(.service-fv-reveal-go) .service-fv {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/*
+ * PC: 縦スライド中は非アクティブな Message / Service / Approach / Network を描画しない。
+ * is-active 解除直後に ASM・本文がフロー位置（左下付近）へ戻りチラつくのを防止。
+ */
+@media (min-width: 769px) {
+  .section-track.is-transitioning
+    > .section-frame:not(.is-active)
+    > :is(
+      .section-shell--message,
+      .service-shell,
+      .approach-shell,
+      .network-shell
+    ) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /*
+   * Approach→Service: 縦スライド中はスクロールバーが動いて見えるのを防ぐ（静止後に FV 表示）。
+   */
+  .section-track.is-transitioning
+    > .section-frame.is-active
+    > .service-shell
+    > .service-scroll-area {
+    overflow-y: hidden;
+  }
+}
+
+.reveal-item {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 0.52s ease,
+    transform 0.7s cubic-bezier(0.2, 0.65, 0.25, 1);
+}
+
+.section-frame.is-active
+  .reveal-item:not(.asm-cross-eyebrow):not(.hero-bilingual-reveal):not(.message-unified-reveal):not(
+    .network-unified-asmn
+  ):not(.service-unified-asmn):not(.service-fv-unified-reveal):not(.company-unified-asmn):not(.company-title-unified):not(.contact-unified-asmn):not(
+    .contact-title-unified
+  ) {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.reveal-line {
+  display: block;
+  overflow: hidden;
+  line-height: inherit;
+}
+
+.reveal-line-inline {
+  display: inline-block;
+}
+
+.reveal-line-inner {
+  display: inline-block;
+  clip-path: inset(0 0 115% 0);
+  transform: translate3d(0, 38px, 0) skewY(3deg);
+  opacity: 0;
+  transition:
+    clip-path 0.9s cubic-bezier(0.16, 0.84, 0.24, 1),
+    opacity 0.62s ease,
+    transform 0.92s cubic-bezier(0.18, 0.82, 0.22, 1);
+  will-change: clip-path, transform, opacity;
+}
+
+.section-frame.is-active .reveal-line-inner {
+  clip-path: inset(0 0 0 0);
+  opacity: 1;
+  transform: translate3d(0, 0, 0) skewY(0);
+}
+
+.reveal-delay-1 {
+  transition-delay: 0.08s;
+}
+
+.reveal-delay-2 {
+  transition-delay: 0.2s;
+}
+
+.reveal-delay-3 {
+  transition-delay: 0.32s;
+}
+
+.reveal-delay-4 {
+  transition-delay: 0.38s;
+}
+
+.reveal-delay-5 {
+  transition-delay: 0.48s;
+}
+
+.section-frame.is-active .reveal-delay-1.reveal-item:not(.asm-cross-eyebrow),
+.section-frame.is-active .reveal-delay-1 .reveal-line-inner {
+  transition-delay: 0.08s;
+}
+
+.section-frame.is-active .reveal-delay-2.reveal-item:not(.asm-cross-eyebrow),
+.section-frame.is-active .reveal-delay-2 .reveal-line-inner {
+  transition-delay: 0.2s;
+}
+
+.section-frame.is-active .reveal-delay-3.reveal-item:not(.asm-cross-eyebrow),
+.section-frame.is-active .reveal-delay-3 .reveal-line-inner {
+  transition-delay: 0.32s;
+}
+
+.section-frame.is-active .reveal-delay-4.reveal-item:not(.asm-cross-eyebrow),
+.section-frame.is-active .reveal-delay-4 .reveal-line-inner {
+  transition-delay: 0.38s;
+}
+
+.section-frame.is-active .reveal-delay-5.reveal-item:not(.asm-cross-eyebrow),
+.section-frame.is-active .reveal-delay-5 .reveal-line-inner {
+  transition-delay: 0.48s;
+}
+
+/*
+ * ASM ラベル: 十字アーム移動完了後に Company/Contact（005・006）と同型のテキストリビール。
+ * 位置は AsmCrossEyebrow が管理（リビール用 translate のみ）。
+ */
+.reveal-item.asm-cross-eyebrow:not(.message-unified-reveal):not(.hero-bilingual-reveal) {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  transition: none;
+}
+
+.section-frame.is-active
+  .reveal-item.asm-cross-eyebrow:not(.hero-bilingual-reveal):not(.message-unified-reveal):not(
+    .network-unified-asmn
+  ):not(.service-unified-asmn):not(.company-unified-asmn):not(.contact-unified-asmn) {
+  opacity: 0;
+  transition: none;
+  animation: company-text-reveal 0.52s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+  animation-delay: var(--asmn-text-reveal-base, 950ms);
+}
+
+/* Hero ループクローン（Contact→Hero 遷移中）は非表示 */
+.section-frame.is-active .section-shell--hero.section-shell--hero-loop-clone .reveal-item {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  animation: none;
+  transition: none;
+}
+
+/*
+ * Contact ループクローン（Hero→Contact 遷移中）: 本番フレーム到達前にリビールを走らせない。
+ * スライド中は非表示のまま。vi=7 到達後に本番のみ contact-entry-ready。
+ */
+.section-frame.is-active .section-shell.contact-shell.contact-shell--loop-clone .reveal-item,
+.section-frame.is-active
+  .section-shell.contact-shell.contact-shell--loop-clone
+  .contact-form-label,
+.section-frame.is-active
+  .section-shell.contact-shell.contact-shell--loop-clone
+  .contact-form-intro-text,
+.section-frame.is-active
+  .section-shell.contact-shell.contact-shell--loop-clone
+  .contact-form-terms,
+.section-frame.is-active
+  .section-shell.contact-shell.contact-shell--loop-clone
+  .contact-form-send-label,
+.section-frame.is-active
+  .section-shell.contact-shell.contact-shell--loop-clone
+  .contact-form-placeholder {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  animation: none !important;
+  transition: none !important;
+}
+
+.section-frame.is-active .section-shell.contact-shell.contact-shell--loop-clone .contact-form-line-h,
+.section-frame.is-active .section-shell.contact-shell.contact-shell--loop-clone .contact-form-line-v {
+  animation: none !important;
+}
+
+/*
+ * Hero 英語・日本語: セクションスライド完了＋位置同期後にリビール（Message 見出し／キャッチと同型）。
+ * .hero-entry-ready 前は is-active でも非表示のまま。
+ */
+.section-frame.is-active
+  .section-shell--hero:not(.section-shell--hero-loop-clone):not(.hero-entry-ready)
+  .hero-bilingual-reveal {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition: none;
+  animation: none;
+}
+
+/* Hero 英語・日本語: 同一 keyframes で同時リビール（スライド後すぐ） */
+.section-frame.is-active
+  .section-shell--hero.hero-entry-ready:not(.section-shell--hero-loop-clone)
+  .hero-bilingual-reveal {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition: none;
+  animation: hero-bilingual-reveal var(--hero-bilingual-reveal-duration) cubic-bezier(0.2, 0.65, 0.25, 1)
+    forwards;
+  animation-delay: var(--hero-bilingual-reveal-delay);
+}
+
+@keyframes hero-bilingual-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/*
+ * Hero ASMN: 位置は JS（top/left）。英語・日本語と同じ hero-entry-ready トリガー・同 delay/duration（opacity のみ）。
+ */
+.section-frame.is-active
+  .section-shell--hero:not(.section-shell--hero-loop-clone):not(.hero-entry-ready)
+  .asm-cross-eyebrow.hero-bilingual-reveal {
+  opacity: 0;
+  transform: none;
+  animation: none;
+}
+
+.section-frame.is-active
+  .section-shell--hero.hero-entry-ready:not(.section-shell--hero-loop-clone)
+  .asm-cross-eyebrow.hero-bilingual-reveal {
+  opacity: 0;
+  transform: none;
+  transition: none;
+  animation: hero-asmn-reveal var(--hero-bilingual-reveal-duration) cubic-bezier(0.2, 0.65, 0.25, 1)
+    forwards;
+  animation-delay: var(--hero-bilingual-reveal-delay);
+}
+
+@keyframes hero-asmn-reveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@supports not (clip-path: inset(0 0 0 0)) {
+  .reveal-line-inner {
+    transform: translate3d(0, 22px, 0);
+    opacity: 0;
+  }
+
+  .section-frame.is-active .reveal-line-inner {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+.section-shell {
+  position: relative;
+  height: var(--app-viewport-h, 100dvh);
+  display: flex;
+  align-items: center;
+  /* オーバーレイ十字とパディングを揃えるための単一トークン（Message 見出しの left 計算にも使用） */
+  --section-inline-pad: clamp(1.2rem, 2.6vw, 3.4rem);
+  padding: clamp(1.2rem, 2vw, 2rem) var(--section-inline-pad);
+}
+
+/* Message: 見出し行＋グリッドを縦に積む（見出しは section-shell を基準に絶対配置する） */
+.section-shell--message {
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  /* タイトルブロックを translate で持ち上げる分、上に余白を確保して main の欠けを防ぐ */
+  --message-title-lift: 80px;
+  padding-top: calc(clamp(1.2rem, 2vw, 2rem) + var(--message-title-lift));
+  padding-right: var(--section-inline-pad);
+  padding-bottom: clamp(1.2rem, 2vw, 2rem);
+  padding-left: var(--section-inline-pad);
+  /*
+   * クロスプレーン幅: vw と実ビューの差で軸がずれることがあるため dvw を優先。
+   * セクション内容域の左端から十字縦軸まで = cross-inset + focus-x * plane - inline pad
+   */
+  --message-plane-w: calc(100vw - 2 * var(--cross-inset));
+  --message-cross-x: calc(
+    var(--cross-inset) + var(--overlay-focus-x, 0.4444444444444444) *
+      var(--message-plane-w) - var(--section-inline-pad)
+  );
+  /* 日本語ブロックの縦位置（負の値で上へ） */
+  --message-jp-offset-down: -80px;
+  /* 「すべての〜」本文ブロックの横幅スケール */
+  --message-jp-text-width-scale: 0.7;
+  /*
+   * 本文ブロックをレイアウト上だけ上へ（負の margin-top）。
+   * transform は描画が main の overflow で欠けるため使わない。
+   */
+  --message-shift-y: -150px;
+  /*
+   * ASMN ラベル（Message のみ）: 十字フォーカス中心に対して「右下」へ。
+   * AsmCrossEyebrow はラベル左上を left=centerX+offsetX, top=centerY-offsetY に配置するため、
+   * 右方向 = offsetX 正、下方向 = offsetY 負。
+   */
+  --asmn-cross-offset-x: 16px;
+  --asmn-cross-offset-y: -18px;
+}
+
+@supports (width: 1dvw) {
+  .section-shell--message {
+    --message-plane-w: calc(100dvw - 2 * var(--cross-inset));
+  }
+}
+
+/* 見出しは transform しない（欠け防止）。本文のみ負 margin で詰める */
+.section-shell--message > .message-body {
+  margin-top: var(--message-shift-y);
+}
+
+/*
+ * セクションタイトル（Message / キャッチ）のみ上へ。
+ * flex の justify-content:center では負 margin が効かないことがあるため translateY を使用。
+ * 親の padding-top と同じ量を相殺して位置だけ上げる。
+ */
+.section-shell--message > .message-titles-stack {
+  padding-top: clamp(0.25rem, 2.5vh, 2.75rem);
+  transform: translateY(calc(-1 * var(--message-title-lift) - 5px));
+  z-index: 2;
+}
+
+/* ASM ラベル用: デスクトップで絶対配置時もグリッド行の高さを確保 */
+.asm-cross-eyebrow-slot {
+  min-height: 0;
+}
+
+@media (min-width: 769px) {
+  .asm-cross-eyebrow-slot {
+    min-height: 3rem;
+  }
+}
+
+/* 固定左レール（ページバー）と干渉しないようトップのみ左余白を確保 */
+.section-shell--hero {
+  padding-left: clamp(2rem, 5vw, 3.5rem);
+  padding-right: clamp(1.2rem, 2.6vw, 3.4rem);
+  /*
+   * Hero PC: ASM は十字フォーカス（1/2）+ offset。英語はグリッド + clamp inset。
+   * SP 用の列1縦軸オフセットは @media (max-width: 768px) のみ。
+   */
+  --asmn-cross-offset-x: -32px;
+  --asmn-cross-offset-y: 118px;
+}
+
+.content-grid {
+  width: min(1400px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(0.65rem, 1.6vw, 1.45rem);
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.hero-title {
+  font-family: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  font-weight: 700;
+  font-size: clamp(1.62rem, 3.95vw, 3.7rem);
+  line-height: 1.18;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+  padding-block: 0.06em 0.16em;
+  overflow: visible;
+}
+
+/* SP Hero のみ：英語ブロック内の改行 */
+.hero-flow-break {
+  display: none;
+}
+
+.hero-meta {
+  grid-row: 1 / 2;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-self: start;
+}
+
+.hero-brand {
+  margin: 0;
+  font-family: var(--font-din-2014), var(--font-noto-sans-jp), sans-serif;
+  font-size: clamp(0.68rem, 0.95vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: rgba(232, 236, 255, 0.72);
+}
+
+/* ロゴを固定ヘッダーへ移した後も ASM の基準位置を維持する（視覚のみ非表示） */
+.hero-brand--layout-anchor {
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 固定ヘッダー（ロゴ）。グリッドの cross-inset よりやや上に寄せる */
+.site-header {
+  position: fixed;
+  top: clamp(10px, 1.1vw, 16px);
+  left: 0;
+  right: 0;
+  z-index: 8;
+  padding-left: calc(clamp(2rem, 5vw, 3.5rem) - 3px);
+  padding-right: clamp(1.2rem, 2.6vw, 3.4rem);
+  pointer-events: none;
+}
+
+.site-header__brand {
+  pointer-events: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  transform: translate(6px, -10px);
+  transition:
+    color 0.25s ease,
+    opacity 0.25s ease;
+}
+
+.site-header__brand:hover {
+  color: rgba(244, 247, 255, 0.92);
+}
+
+.site-header__brand:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 4px;
+}
+
+.hero-grid {
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  align-content: stretch;
+  min-height: min(82vh, 700px);
+  row-gap: clamp(0.3rem, 1vw, 0.95rem);
+}
+
+/*
+ * 英語ブロックの縦：レール高さに対するアンカー（translateY(-50%) で縦中央を合わせる）。
+ * 以前は 1/4〜1/2 の中点（37.5%）→ やや上へ調整。
+ */
+.hero-copy-rail {
+  grid-row: 1 / -1;
+  position: relative;
+  z-index: 1;
+  align-self: stretch;
+  min-height: 0;
+  pointer-events: none;
+}
+
+.hero-copy-rail > .hero-copy-group {
+  pointer-events: auto;
+}
+
+.hero-copy-group {
+  position: absolute;
+  /* PC: clamp inset / SP: --hero-copy-aligned-left（HeroSection・768px 以下のみ） */
+  left: var(--hero-copy-aligned-left, var(--hero-copy-inline-inset-left));
+  right: var(--hero-copy-inline-inset-right);
+  width: auto;
+  top: 30%;
+  transform: translateY(-50%);
+}
+
+.hero-subtitle {
+  margin-top: clamp(0.55rem, 1.05vw, 0.95rem);
+  font-size: clamp(0.96rem, 1.28vw, 1.2rem);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  color: rgba(244, 247, 255, 0.92);
+  max-width: min(31rem, 100%);
+}
+
+.hero-support {
+  margin-top: clamp(0.5rem, 0.95vw, 0.85rem);
+  max-width: min(22rem, 100%);
+  font-size: clamp(0.7rem, 0.82vw, 0.82rem);
+  line-height: 1.55;
+  color: rgba(233, 237, 255, 0.82);
+}
+
+.hero-jp-wrap {
+  grid-row: 7 / span 2;
+  position: relative;
+  z-index: 2;
+  align-self: end;
+  justify-self: start;
+  max-width: 25rem;
+  text-align: left;
+  line-break: strict;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hanging-punctuation: first allow-end last;
+  text-wrap: pretty;
+}
+
+.hero-jp-title {
+  font-size: clamp(1rem, 1.45vw, 1.52rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgba(248, 251, 255, 0.97);
+}
+
+.hero-jp-body {
+  margin-top: 0.4rem;
+  font-size: clamp(0.72rem, 0.92vw, 0.88rem);
+  line-height: 1.62;
+  color: rgba(228, 233, 253, 0.86);
+}
+
+@supports (text-spacing-trim: trim-start) {
+  .hero-jp-wrap {
+    text-spacing-trim: trim-start;
+  }
+}
+
+.section-title {
+  font-family: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  font-size: clamp(1.8rem, 4vw, 4.3rem);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+}
+
+/* Message: ASM ラベルとは別の英字見出し */
+.message-heading {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-din-2014), var(--font-noto-sans-jp), sans-serif;
+  font-size: clamp(0.7rem, 0.9vw, 0.8rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(232, 236, 255, 0.88);
+}
+
+/* キャッチ：Message / Service / Approach の日本語タイトル共通サイズ */
+.message-tagline {
+  margin: 0;
+  max-width: 100%;
+  font-family: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  font-weight: 700;
+  font-size: clamp(0.95rem, 2.05vw, 1.5rem);
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .message-tagline {
+    white-space: normal;
+    font-size: clamp(0.88rem, 3.6vw, 1.08rem);
+  }
+
+  .company-shell .message-titles-axis .message-tagline {
+    white-space: normal;
+    font-size: clamp(0.88rem, 3.6vw, 1.08rem);
+  }
+
+  .hero-title {
+    font-size: clamp(1.22rem, 6.2vw, 1.42rem);
+    line-height: 1.08;
+  }
+
+  .hero-subtitle {
+    font-size: clamp(0.72rem, 3.5vw, 0.84rem);
+  }
+
+  .hero-support {
+    font-size: clamp(0.58rem, 2.65vw, 0.68rem);
+  }
+
+  .section-shell--hero .hero-copy-group {
+    max-width: min(16rem, calc(100% - var(--hero-copy-aligned-left, 0px) - 0.5rem));
+  }
+
+  .hero-grid {
+    gap: clamp(0.6rem, 3.5vw, 0.95rem);
+  }
+
+  .section-shell--hero .hero-jp-wrap {
+    padding-top: clamp(0.95rem, 3.75vh, 1.55rem);
+  }
+
+  .section-shell--hero .hero-jp-title,
+  .section-shell--hero .hero-jp-body {
+    max-width: min(16rem, calc(100% - 0.5rem));
+  }
+
+  .section-shell--hero .hero-jp-title {
+    font-size: clamp(0.78rem, 3.35vw, 0.9rem);
+    line-height: 1.42;
+  }
+
+  .section-shell--hero .hero-jp-body {
+    font-size: clamp(0.62rem, 2.75vw, 0.72rem);
+    line-height: 1.52;
+    margin-top: 0.42rem;
+    transform: translateY(-5px);
+  }
+}
+
+/*
+ * Message 見出し: グリッド列ではなく .section-shell（padding ボックス）基準で絶対配置。
+ * 十字縦軸のビューポート座標 = cross-inset + overlay-focus-x * (100vw - 2*cross-inset)。
+ * その点から左パディングを引いた値が、shell 内容域左端からの距離（GridOverlay と整合）。
+ */
+.message-titles-stack {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+  min-height: clamp(5rem, 11vw, 7.5rem);
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.message-titles-axis {
+  position: absolute;
+  top: 0;
+  left: var(--message-cross-x);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(calc(100vw - 2 * var(--cross-inset)), 42rem);
+  margin: 0;
+  text-align: center;
+}
+
+.message-titles-axis .message-heading {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.message-titles-axis .message-tagline {
+  white-space: normal;
+}
+
+/* Message のみ：「財務戦略」キャッチを 10px 上へ */
+.section-shell--message .message-titles-axis .message-tagline {
+  position: relative;
+  top: -10px;
+}
+
+/*
+ * Message 本文: content-grid 1行目 ASM / 2行目日本語（軸中央）/ 3行目英語。
+ * 英語はトップの .hero-jp-wrap と同じ列（md: col-start-9 span-4）。
+ */
+.message-body {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.85rem, 2vw, 1.35rem);
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.message-body-grid {
+  row-gap: clamp(1.35rem, 3vw, 2rem);
+}
+
+.message-col--jp {
+  margin-top: var(--message-jp-offset-down);
+  padding-left: 0;
+  padding-right: 0;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+}
+
+/* タイトル（.message-titles-axis）と同じ軸上にブロック中心を合わせ、字組は中央揃え */
+.message-jp-axis {
+  position: relative;
+  left: var(--message-cross-x);
+  /* 「すべての〜」本文＋署名をまとめて上へ（translateX は中央揃えのまま） */
+  transform: translate(-50%, -10px);
+  width: max-content;
+  max-width: min(
+    calc((100vw - 2 * var(--cross-inset)) * var(--message-jp-text-width-scale, 1)),
+    calc(38rem * var(--message-jp-text-width-scale, 1))
+  );
+  padding-inline: clamp(0.75rem, 2.5vw, 1.25rem);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* ヒーロー右カラム日本語（.hero-jp-wrap）と同じ配置・字組（左揃え）— PC 既定 */
+.message-en-wrap {
+  position: relative;
+  z-index: 2;
+  align-self: start;
+  justify-self: start;
+  max-width: 28rem;
+  width: 100%;
+  margin-top: calc(clamp(2.25rem, 5.5vw, 5rem) + 30px);
+  text-align: left;
+  line-break: auto;
+  word-break: normal;
+  overflow-wrap: normal;
+  hanging-punctuation: first allow-end last;
+  text-wrap: pretty;
+  /* lang="en" 前提。手動改行なしで折り返し＋ハイフン */
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  hyphenate-limit-chars: 6 3 3;
+  hyphenate-limit-lines: 2;
+  hyphenate-limit-last: always;
+}
+
+.message-col--en {
+  padding-right: 0;
+}
+
+.message-en-wrap .message-en-lead,
+.message-en-wrap .message-en-body {
+  text-align: left;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  hyphenate-limit-chars: 6 3 3;
+}
+
+@supports (text-spacing-trim: trim-start) {
+  .message-en-wrap {
+    text-spacing-trim: trim-start;
+  }
+}
+
+/* 「すべての〜」本文（やや小さめ・行高詰め） */
+.message-col--jp .lead.message-jp-text {
+  font-size: clamp(0.74rem, 1.15vw, 0.88rem);
+  line-height: 1.52;
+  text-align: center;
+}
+
+.message-col--jp .message-signature {
+  font-size: clamp(0.72rem, 0.85vw, 0.82rem);
+  text-align: center;
+  /* 本文との間隔（+10px からさらに 15px 詰める） */
+  margin: calc(clamp(1.25rem, 2.5vw, 1.75rem) - 5px) 0 0;
+}
+
+/* Message 署名のみ: フェード／遅延なし（表示時は即時。他の reveal-item は従来どおり） */
+.section-shell--message .message-col--jp .message-signature.reveal-item {
+  transition: none !important;
+  animation: none !important;
+}
+
+.section-frame.is-active .section-shell--message .message-col--jp .message-signature.reveal-item {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  transition-delay: 0s !important;
+  animation: none !important;
+}
+
+.message-en-lead {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(0.78rem, 1.05vw, 0.92rem);
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  color: rgba(244, 247, 255, 0.95);
+}
+
+.message-en-body {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(0.7rem, 0.95vw, 0.84rem);
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0.005em;
+  color: var(--text-secondary);
+}
+
+.message-en-body:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 769px) {
+  .section-shell--message {
+    /* PC Message: 段階リビール遅延（SP は max-width 768px 内の同名変数） */
+    --message-reveal-stagger-1: 0s;
+    --message-reveal-stagger-2: 0.2s;
+    --message-reveal-stagger-3: 0.32s;
+    --message-reveal-stagger-4: 0.38s;
+    --message-reveal-stagger-5: 0.48s;
+    /* 「すべての〜」本文ブロック幅のみ +20%（0.7 → 0.84）。SP は 0.772 のまま */
+    --message-jp-text-width-scale: 0.84;
+  }
+
+  /*
+   * PC: 既定は width:max-content のため max-width だけでは見た目が変わらない。
+   * スケール後の幅を width にも当ててテキストボックスを実際に広げる。
+   */
+  .section-shell--message .message-jp-axis {
+    width: min(
+      calc((100vw - 2 * var(--cross-inset)) * var(--message-jp-text-width-scale, 1)),
+      calc(38rem * var(--message-jp-text-width-scale, 1))
+    );
+    max-width: min(
+      calc((100vw - 2 * var(--cross-inset)) * var(--message-jp-text-width-scale, 1)),
+      calc(38rem * var(--message-jp-text-width-scale, 1))
+    );
+  }
+
+  .section-frame.is-active .section-shell--message .message-col--jp.reveal-item {
+    transform: none;
+  }
+
+  /*
+   * PC Message: 見出し・ASMN・本文を is-active で段階リビール（下から 18px + フェード・transition）。
+   * ASMN（PC）は Hero 同型（hero-bilingual-reveal + hero-asmn-reveal）。
+   */
+  .section-shell--message .message-unified-reveal.reveal-item:not(.asm-cross-eyebrow) {
+    transform: translate3d(0, 18px, 0);
+    transition:
+      opacity 0.52s ease,
+      transform 0.7s cubic-bezier(0.2, 0.65, 0.25, 1);
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .message-unified-reveal.reveal-item:not(.asm-cross-eyebrow) {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    animation: none !important;
+    transition:
+      opacity 0.52s ease,
+      transform 0.7s cubic-bezier(0.2, 0.65, 0.25, 1);
+  }
+
+  /* 再訪問（SERVICE→MESSAGE 等）: 再アニメしない */
+  .section-frame.is-active
+    .section-shell--message.message-pc-visited
+    .message-unified-reveal.reveal-item {
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /*
+   * MESSAGE ASMN 計測用（Hero / SERVICE 再訪問とも同一）。transform のみ確定（opacity は触らない）。
+   */
+  .section-frame.is-active
+    .section-shell--message.message-pc-measure-visited
+    .message-unified-reveal.reveal-item:not(.asm-cross-eyebrow) {
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .reveal-delay-2.message-unified-reveal.reveal-item:not(.asm-cross-eyebrow) {
+    transition-delay: var(--message-reveal-stagger-2);
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .reveal-delay-3.message-unified-reveal.reveal-item {
+    transition-delay: var(--message-reveal-stagger-3);
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .reveal-delay-4.message-unified-reveal.reveal-item {
+    transition-delay: var(--message-reveal-stagger-4);
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .reveal-delay-5.message-unified-reveal.reveal-item:not(.asm-cross-eyebrow) {
+    transition-delay: var(--message-reveal-stagger-5);
+  }
+
+  /*
+   * PC Message ASMN: Hero と同型（message-entry-ready → hero-asmn-reveal・opacity のみ 0.4s）。
+   */
+  .section-frame.is-active
+    .section-shell--message:not(.message-entry-ready)
+    .message-body
+    .asm-cross-eyebrow.hero-bilingual-reveal {
+    opacity: 0 !important;
+    visibility: hidden;
+    transform: none;
+    animation: none !important;
+  }
+
+  .section-frame.is-active
+    .section-shell--message.message-entry-ready
+    .message-body
+    .asm-cross-eyebrow.hero-bilingual-reveal {
+    visibility: visible;
+    opacity: 0;
+    transform: none !important;
+    transition: none !important;
+    animation: hero-asmn-reveal var(--hero-bilingual-reveal-duration)
+      cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: var(--hero-bilingual-reveal-delay) !important;
+  }
+
+  /*
+   * SERVICE ASMN 計測用（MESSAGE→SERVICE / NETWORK→SERVICE 再訪問とも同一）。
+   */
+  .section-frame.is-active
+    .service-shell.service-pc-asm-measure-visited
+    .service-fv
+    .message-heading.reveal-item,
+  .section-frame.is-active
+    .service-shell.service-pc-asm-measure-visited
+    .service-fv
+    .message-tagline.reveal-item {
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  /*
+   * PC Service / Approach / Network ASMN: Message と同型（*-pc-asm-ready → hero-asmn-reveal）。
+   */
+  .section-frame.is-active
+    .service-shell:not(.service-pc-asm-ready)
+    .asm-cross-eyebrow.hero-bilingual-reveal,
+  .section-frame.is-active
+    .approach-shell:not(.approach-pc-asm-ready)
+    .asm-cross-eyebrow.hero-bilingual-reveal,
+  .section-frame.is-active
+    .network-shell:not(.network-pc-asm-ready)
+    .asm-cross-eyebrow.hero-bilingual-reveal {
+    opacity: 0 !important;
+    /* visibility:hidden だと JS 配置後も inline と競合して消えたままになりやすい */
+    visibility: visible;
+    pointer-events: none;
+    transform: none;
+    animation: none !important;
+  }
+
+  .section-frame.is-active
+    .service-shell.service-pc-asm-ready
+    .asm-cross-eyebrow.hero-bilingual-reveal,
+  .section-frame.is-active
+    .approach-shell.approach-pc-asm-ready
+    .asm-cross-eyebrow.hero-bilingual-reveal,
+  .section-frame.is-active
+    .network-shell.network-pc-asm-ready
+    .asm-cross-eyebrow.hero-bilingual-reveal,
+  .section-frame.is-active
+    .network-shell.network-pc-asm-ready
+    .asm-cross-eyebrow.hero-bilingual-reveal.network-unified-asmn {
+    visibility: visible;
+    opacity: 0;
+    transform: none !important;
+    transition: none !important;
+    animation: hero-asmn-reveal var(--hero-bilingual-reveal-duration)
+      cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: var(--hero-bilingual-reveal-delay) !important;
+  }
+
+  .section-frame.is-active
+    .network-shell:not(.network-pc-asm-ready)
+    .asm-cross-eyebrow.hero-bilingual-reveal.network-unified-asmn {
+    opacity: 0 !important;
+    visibility: visible;
+    pointer-events: none;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .section-frame.is-active .section-shell--message .message-col--jp.reveal-item.message-unified-reveal {
+    transform: none;
+  }
+
+  /* PC: リビールは外枠 .message-en-wrap のみ（内側はレイアウトに参加させない） */
+  .section-shell--message .message-en-reveal.reveal-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    animation: none;
+  }
+
+  .section-shell--message .message-en-reveal {
+    display: contents;
+  }
+
+  /* 署名: 位置のみ（フェードはグローバルルールで無効） */
+  .section-shell--message .message-col--jp .message-signature.reveal-item {
+    position: relative;
+    top: -12px;
+  }
+}
+
+.message-signature {
+  margin: clamp(1.25rem, 2.5vw, 1.75rem) 0 0;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  text-align: right;
+  letter-spacing: 0.04em;
+  color: rgba(220, 226, 255, 0.72);
+}
+
+/* flow: max-width 768px — SP フローモード（縦積み・枠線 UI・ASM 通常フロー） */
+@media (max-width: 768px) {
+  .section-shell--message {
+    /*
+     * SP: flex 中央寄せだと負 margin / transform が効かないため上詰め。
+     * 見出し＋日本語をまとめて上げる量（英語は --message-en-sp-offset-down）。
+     */
+    --message-jp-sp-lift: 30px;
+    /* 見出し（Message / キャッチ）のみ下へ。日本語・英語は変更しない */
+    --message-title-sp-offset-down: 50px;
+    --message-title-lift: clamp(44px, 12vw, 68px);
+    --message-shift-y: clamp(-90px, -17vw, -22px);
+    --message-jp-offset-down: clamp(-68px, -14vw, -48px);
+    --message-en-cross-pad: 2px;
+    /* 英語ブロックのみ微調整（MessageSection・offsetParent 基準 + margin） */
+    --message-en-sp-offset-down: 65px;
+    --message-en-sp-offset-right: 50px;
+    /* 右端ダッシュ手前（ハイフンが切れない余白） */
+    --message-en-sp-inset-right: 8px;
+    /*
+     * ASMN（Message SP）: 英語ブロック直上（MessageSection 配置後に同期）。
+     * --message-asmn-en-offset-x: 英語ブロック左端からの横ずれ
+     */
+    --message-asmn-above-en-gap: 83px;
+    --message-asmn-en-offset-x: 10px;
+    --message-asmn-extra-lift: 5px;
+    --message-asmn-offset-down: 15px;
+    /* 「すべての〜」本文ブロック幅（PC 0.7 のまま・SP のみ +10%） */
+    --message-jp-text-width-scale: 0.772;
+    /* SP Message: 全要素同一リビール（位置確定後・同時） */
+    --message-reveal-unified-delay: 0s;
+    --message-reveal-unified-duration: 0.52s;
+    /* PC 用に JSX の reveal-delay-* は維持（SP では未使用） */
+    --message-reveal-stagger-1: 0s;
+    --message-reveal-stagger-2: 0.04s;
+    --message-reveal-stagger-3: 0.07s;
+    --message-reveal-stagger-4: 0.1s;
+    --message-reveal-stagger-5: 0.14s;
+    justify-content: flex-start;
+    padding-top: calc(
+      max(env(safe-area-inset-top, 0px), clamp(1.2rem, 2vw, 2rem)) + var(--message-title-lift) -
+        var(--message-jp-sp-lift)
+    );
+  }
+
+  .section-shell--message > .message-titles-stack {
+    transform: none;
+    margin-top: 0;
+  }
+
+  /* ASMN: 十字に固定しつつ、グリッド1行目の高さは確保（日本語ブロックの縦位置を維持） */
+  .section-shell--message .asm-cross-eyebrow-slot {
+    position: static;
+    grid-column: 1 / -1;
+    min-height: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .section-shell--message .asm-cross-eyebrow {
+    pointer-events: auto;
+  }
+
+  .section-shell--message .reveal-delay-2 {
+    transition-delay: var(--message-reveal-stagger-2);
+  }
+
+  .section-shell--message .reveal-delay-3 {
+    transition-delay: var(--message-reveal-stagger-3);
+  }
+
+  .section-shell--message .reveal-delay-4 {
+    transition-delay: var(--message-reveal-stagger-4);
+  }
+
+  .section-shell--message .reveal-delay-5 {
+    transition-delay: var(--message-reveal-stagger-5);
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .reveal-delay-2.reveal-item:not(.asm-cross-eyebrow):not(.message-unified-reveal),
+  .section-frame.is-active .section-shell--message .reveal-delay-2 .reveal-line-inner {
+    transition-delay: var(--message-reveal-stagger-2);
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .reveal-delay-3.reveal-item:not(.asm-cross-eyebrow):not(.message-unified-reveal),
+  .section-frame.is-active .section-shell--message .reveal-delay-3 .reveal-line-inner {
+    transition-delay: var(--message-reveal-stagger-3);
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .reveal-delay-4.reveal-item:not(.asm-cross-eyebrow):not(.message-unified-reveal),
+  .section-frame.is-active .section-shell--message .reveal-delay-4 .reveal-line-inner {
+    transition-delay: var(--message-reveal-stagger-4);
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .reveal-delay-5.reveal-item:not(.asm-cross-eyebrow):not(.message-unified-reveal),
+  .section-frame.is-active .section-shell--message .reveal-delay-5 .reveal-line-inner {
+    transition-delay: var(--message-reveal-stagger-5);
+  }
+
+  /*
+   * SP Message: 見出し・キャッチ・ASMN・日英本文を位置確定後に同一 keyframes で同時リビール。
+   * PC（769px+）は transition + reveal-delay のまま。
+   */
+  .section-frame.is-active
+    .section-shell--message:not(.message-entry-ready)
+    .message-unified-reveal.reveal-item:not(.asm-cross-eyebrow) {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none;
+    animation: none;
+  }
+
+  .section-frame.is-active
+    .section-shell--message.message-entry-ready
+    .message-unified-reveal.reveal-item:not(.asm-cross-eyebrow) {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none;
+    animation: message-unified-reveal var(--message-reveal-unified-duration)
+      cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+    animation-delay: var(--message-reveal-unified-delay);
+  }
+
+  /* SP Message ASMN: Hero 同型（opacity のみ） */
+  .section-frame.is-active
+    .section-shell--message:not(.message-entry-ready)
+    .message-body
+    .asm-cross-eyebrow.hero-bilingual-reveal {
+    opacity: 0;
+    transform: none;
+    animation: none;
+  }
+
+  .section-frame.is-active
+    .section-shell--message.message-entry-ready
+    .message-body
+    .asm-cross-eyebrow.hero-bilingual-reveal {
+    opacity: 0;
+    transform: none !important;
+    transition: none !important;
+    animation: hero-asmn-reveal var(--hero-bilingual-reveal-duration)
+      cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: var(--hero-bilingual-reveal-delay) !important;
+  }
+
+  @keyframes message-unified-reveal {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  /* Service / Approach SP: ASMN 用（Message 統一リビールとは別） */
+  @keyframes message-asmn-reveal {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes approach-titles-unified-reveal {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes network-titles-unified-reveal {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  /* Company / Contact: 位置ジャンプ防止のため opacity のみ（translate は使わない） */
+  @keyframes company-titles-unified-reveal {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes contact-titles-unified-reveal {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes network-asmn-unified-reveal {
+    from {
+      opacity: 0;
+      transform: translate3d(-50%, 18px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+
+  /*
+   * ASMN 002（Service SP）: 001 と同系統（FV タグライン直上・section-shell 基準の JS 配置）。
+   */
+  .service-shell {
+    --message-asmn-above-en-gap: 83px;
+    /* SP Service: ASMN 横位置は見出し＋キャッチ中央（JS） */
+    --service-asmn-center-offset-x: -5px;
+    --message-asmn-extra-lift: 5px;
+    /* 確定後の微調整（AsmCrossEyebrow が left/top に加算・リビールは不変） */
+    --service-asmn-fine-offset-x: -5px;
+    --service-asmn-fine-offset-y: 15px;
+    /* FV: ASMN・見出し・日本語キャッチを同時リビール */
+    --service-fv-reveal-duration: 0.7s;
+    --service-fv-reveal-delay: 0s;
+  }
+
+  .service-body-stack {
+    --service-card-inline-inset: clamp(1.1rem, 7.5vw, 1.85rem);
+  }
+
+  .service-shell .service-asmn-slot {
+    position: static;
+    min-height: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .service-shell .service-asmn-slot .asm-cross-eyebrow {
+    pointer-events: auto;
+  }
+
+  @keyframes service-fv-unified-reveal {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  /*
+   * Service FV SP: 位置確定まで待機。確定後は1フレーム静止してから
+   * ASMN・見出し・日本語キャッチを同一 keyframes で同時リビール。
+   */
+  .service-shell:not(.service-entry-ready) .service-fv .reveal-item.asm-cross-eyebrow {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .section-frame.is-active
+    .service-shell:not(.service-entry-ready)
+    .service-fv
+    .message-heading.reveal-item,
+  .section-frame.is-active
+    .service-shell:not(.service-entry-ready)
+    .service-fv
+    .message-tagline.reveal-item {
+    opacity: 0 !important;
+    transform: translate3d(0, 18px, 0) !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* グローバル company-text-reveal 抑止（統一リビール開始前のみ） */
+  .section-frame.is-active
+    .service-shell:not(.service-fv-reveal-go)
+    .service-fv
+    .reveal-item.asm-cross-eyebrow.service-unified-asmn {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  .service-shell.service-entry-ready:not(.service-fv-reveal-go) .service-fv .reveal-item.asm-cross-eyebrow {
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .service-shell.service-entry-ready:not(.service-fv-reveal-go) .service-fv .message-heading.reveal-item.service-fv-unified-reveal,
+  .service-shell.service-entry-ready:not(.service-fv-reveal-go) .service-fv .message-tagline.reveal-item.service-fv-unified-reveal {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .service-shell.service-entry-ready.service-fv-reveal-go
+    .service-fv
+    .message-heading.reveal-item.service-fv-unified-reveal,
+  .service-shell.service-entry-ready.service-fv-reveal-go
+    .service-fv
+    .message-tagline.reveal-item.service-fv-unified-reveal,
+  .service-shell.service-entry-ready.service-fv-reveal-go
+    .service-fv
+    .reveal-item.asm-cross-eyebrow.service-unified-asmn {
+    visibility: visible;
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none !important;
+    animation: service-fv-unified-reveal var(--service-fv-reveal-duration)
+      cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: var(--service-fv-reveal-delay) !important;
+  }
+
+  /*
+   * Approach SP: ASMN → Approach → 日本語キャッチ（縦は DOM 順、横のみ右へシフト）。
+   */
+  .approach-shell {
+    position: relative;
+    --message-jp-sp-lift: 30px;
+    --message-title-sp-offset-down: 50px;
+    --message-title-lift: clamp(44px, 12vw, 68px);
+    /* ASMN 003: Approach 見出し上端からの余白（見出し・キャッチの高さ帯） */
+    --approach-asmn-above-heading-gap: 8px;
+    --approach-heading-tagline-gap: clamp(0.32rem, 1.2vw, 0.5rem);
+    /* ASM は十字交点の中心に合わせる（横オフセットなし） */
+    --message-asmn-en-offset-x: 0px;
+    --message-asmn-extra-lift: 0px;
+    /* 見出し・日本語キャッチのみ右へ（ASMN・チップ等は動かさない） */
+    --approach-titles-shift-x: 100px;
+    --approach-chip-grid-width: 80%;
+    /*
+     * チップ群: ONE-STOP 上端を横アーム（row 4）の下（JS: --approach-chip-base-margin-down）
+     * + 追加下げ（CSS のみで即反映）
+     */
+    --approach-chip-below-arm-gap: 12px;
+    --approach-chip-base-margin-down: 0px;
+    --approach-chip-offset-extra: 200px;
+    /* タイトル帯の高さ分を shell 上端に確保（チップ margin-top はそのまま） */
+    --approach-titles-band-height: clamp(5.5rem, 17vw, 8.5rem);
+    --approach-titles-above-arm-gap: 12px;
+    --approach-titles-top: max(env(safe-area-inset-top, 0px), clamp(2.75rem, 9vw, 4rem));
+    --approach-titles-reveal-duration: 0.7s;
+    --approach-titles-reveal-delay: 0s;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: visible;
+    padding-top: calc(
+      max(env(safe-area-inset-top, 0px), clamp(1.2rem, 2vw, 2rem)) +
+        var(--approach-titles-band-height)
+    );
+  }
+
+  /*
+   * ASMN・見出し・日本語キャッチ：固定ヘッダー下に固定表示（flex 圧縮・clip 回避）
+   */
+  .section-frame.is-active > .approach-shell > .message-titles-stack {
+    position: absolute;
+    top: var(--approach-titles-top);
+    left: 0;
+    right: 0;
+    z-index: 10;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    min-height: var(--approach-titles-band-height);
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .approach-shell .message-titles-axis {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    width: var(--approach-chip-grid-width);
+    max-width: var(--approach-chip-grid-width);
+    margin-inline: auto;
+    margin-top: 0;
+    padding-left: var(--approach-titles-shift-x);
+    box-sizing: border-box;
+    text-align: left;
+    pointer-events: auto;
+  }
+
+  .approach-shell .approach-heading-axis {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+  }
+
+  .approach-shell .approach-heading-axis .message-heading {
+    margin-left: 0;
+    margin-right: auto;
+    margin-bottom: var(--approach-heading-tagline-gap);
+    text-align: left;
+  }
+
+  .approach-shell .approach-tagline-axis {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+  }
+
+  .approach-shell .approach-tagline-axis .message-tagline {
+    position: relative;
+    margin-left: 0;
+    margin-right: auto;
+    text-align: left;
+    line-height: 1.16;
+    white-space: normal;
+  }
+
+  /* タイトル・ASM の absolute / はみ出しを切らない（shell 側の overflow: hidden を解除） */
+  .section-frame.is-active > .approach-shell {
+    overflow: visible;
+  }
+
+  .section-frame.is-active:has(.approach-shell) {
+    overflow: visible;
+  }
+
+  /*
+   * タイトル帯（ASMN・見出し・キャッチ）: 位置確定後に同一 keyframes で同時リビール（Service FV 同型）。
+   * レイアウトは approach-layout-ready まで JS 同期のみ。
+   */
+  .approach-shell:not(.approach-layout-ready) .approach-asmn-slot .reveal-item.asm-cross-eyebrow {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .section-frame.is-active
+    .approach-shell:not(.approach-layout-ready)
+    .message-heading.reveal-item,
+  .section-frame.is-active
+    .approach-shell:not(.approach-layout-ready)
+    .message-tagline.reveal-item,
+  .section-frame.is-active
+    .approach-shell:not(.approach-titles-reveal-go)
+    .message-heading.reveal-item,
+  .section-frame.is-active
+    .approach-shell:not(.approach-titles-reveal-go)
+    .message-tagline.reveal-item,
+  .section-frame.is-active
+    .approach-shell:not(.approach-titles-reveal-go)
+    .approach-chip.reveal-item {
+    opacity: 0 !important;
+    transform: translate3d(0, 18px, 0) !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* Approach SP: グローバル company-text-reveal（950ms遅延）を抑止（統一リビール中は keyframes を許可） */
+  .approach-shell:not(.approach-titles-reveal-go)
+    .approach-asmn-slot
+    .reveal-item.asm-cross-eyebrow,
+  .section-frame.is-active
+    .approach-shell:not(.approach-titles-reveal-go)
+    .reveal-item.asm-cross-eyebrow:not(.hero-bilingual-reveal) {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .approach-shell.approach-layout-ready:not(.approach-titles-reveal-go)
+    .approach-asmn-slot
+    .reveal-item.asm-cross-eyebrow {
+    visibility: visible;
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .approach-shell.approach-layout-ready:not(.approach-titles-reveal-go) .message-heading.reveal-item,
+  .approach-shell.approach-layout-ready:not(.approach-titles-reveal-go) .message-tagline.reveal-item,
+  .approach-shell.approach-layout-ready:not(.approach-titles-reveal-go) .approach-chip.reveal-item {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .approach-shell.approach-layout-ready.approach-titles-reveal-go
+    .message-heading.reveal-item,
+  .approach-shell.approach-layout-ready.approach-titles-reveal-go
+    .message-tagline.reveal-item,
+  .approach-shell.approach-layout-ready.approach-titles-reveal-go
+    .approach-asmn-slot
+    .reveal-item.asm-cross-eyebrow {
+    visibility: visible;
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none !important;
+    animation: approach-titles-unified-reveal var(--approach-titles-reveal-duration)
+      cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: 0s !important;
+  }
+
+  .section-frame.is-active
+    .approach-shell.approach-layout-ready.approach-titles-reveal-go
+    .approach-chip.reveal-delay-4.reveal-item {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition:
+      opacity 0.52s ease,
+      transform 0.7s cubic-bezier(0.2, 0.65, 0.25, 1);
+    transition-delay: 0.38s;
+  }
+
+  .approach-shell > .message-titles-stack .approach-asmn-slot {
+    position: static;
+    min-height: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .approach-shell > .message-titles-stack .approach-asmn-slot .asm-cross-eyebrow {
+    z-index: 11;
+    pointer-events: auto;
+  }
+
+  .approach-shell .approach-body {
+    margin-top: calc(
+      var(--approach-chip-base-margin-down, 0px) + var(--approach-chip-offset-extra, 0px)
+    );
+    position: relative;
+    z-index: 0;
+  }
+
+  .approach-shell .approach-chip-grid {
+    width: var(--approach-chip-grid-width);
+    max-width: var(--approach-chip-grid-width);
+    margin-inline: auto;
+    padding-inline-start: 0;
+  }
+
+  .approach-shell .approach-chip {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* 英語 absolute の包含ブロックは .section-shell（shell 基準で JS 配置） */
+  .message-body-grid {
+    position: static;
+    min-height: 58vh;
+  }
+
+  .message-col--jp {
+    position: relative;
+    z-index: 2;
+    display: block;
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    margin-top: var(--message-jp-offset-down);
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  .section-shell--message .message-jp-axis {
+    position: relative;
+    left: var(--message-cross-x);
+    top: auto;
+    margin-top: 0;
+    transform: translate(-50%, -40px);
+    width: min(
+      calc((100vw - 2 * var(--section-inline-pad)) * var(--message-jp-text-width-scale, 1)),
+      calc(100% - 2 * clamp(0.35rem, 2vw, 1rem))
+    );
+    max-width: min(
+      calc((100vw - 2 * var(--section-inline-pad)) * var(--message-jp-text-width-scale, 1)),
+      calc(100% - 2 * clamp(0.35rem, 2vw, 1rem))
+    );
+    padding-inline: clamp(0.5rem, 3vw, 1.25rem);
+    box-sizing: border-box;
+    text-align: center;
+    overflow-wrap: break-word;
+  }
+
+  .section-frame.is-active .section-shell--message .message-col--jp .message-signature.reveal-item {
+    transform: none;
+    position: relative;
+    top: -12px;
+  }
+
+  /*
+   * 再訪問のみ: 統一リビールと署名の二重 transition を防ぐ。
+   * 初回（Hero→MESSAGE）は message-entry-ready が遅れて付くため対象外（署名の途中で transition が切れる）。
+   */
+  .section-frame.is-active
+    .section-shell--message.message-pc-visited.message-entry-ready
+    .message-col--jp.message-unified-reveal
+    .message-signature.reveal-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    animation: none;
+    position: relative;
+    top: -12px;
+  }
+
+  /*
+   * SP 英語: 外枠は absolute 配置のみ。リビールは .message-unified-reveal（内側／日本語カラム等）。
+   */
+  .section-shell--message .message-en-wrap.reveal-item,
+  .section-shell--message .message-col--jp.reveal-item.message-unified-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    animation: none;
+  }
+
+  .section-shell--message .message-en-reveal.reveal-item {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+
+  /* SP のみ：英語を十字内に配置（寸法・オフセットは MessageSection） */
+  .section-shell--message .message-en-wrap {
+    position: absolute;
+    z-index: 1;
+    align-self: auto;
+    justify-self: auto;
+    max-width: none;
+    width: auto;
+    height: auto;
+    margin: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    overflow: visible;
+    padding: clamp(0.3rem, 0.85vw, 0.5rem) clamp(0.45rem, 1.2vw, 0.65rem)
+      clamp(0.3rem, 0.85vw, 0.5rem) clamp(0.3rem, 0.85vw, 0.5rem);
+    text-align: left;
+    text-wrap: pretty;
+    hyphenate-limit-chars: 5 3 2;
+  }
+
+  .section-shell--message .message-en-lead {
+    margin: 0 0 clamp(0.35rem, 1vw, 0.5rem);
+    font-size: clamp(0.55rem, 2.65vw, 0.68rem);
+    line-height: 1.36;
+    text-align: left;
+    max-width: 100%;
+  }
+
+  .section-shell--message .message-en-body {
+    margin: 0 0 clamp(0.28rem, 0.75vw, 0.4rem);
+    font-size: clamp(0.52rem, 2.35vw, 0.62rem);
+    line-height: 1.42;
+    text-align: left;
+    max-width: 100%;
+  }
+
+  .section-shell--message .message-en-body--support {
+    line-height: 1.4;
+    margin-bottom: 0;
+  }
+
+  .section-shell--message .message-en-body:last-child {
+    margin-bottom: 0;
+  }
+
+  .message-titles-stack {
+    margin-bottom: clamp(1rem, 3.5vw, 1.75rem);
+    min-height: clamp(4.5rem, 14vw, 6.5rem);
+  }
+
+  /*
+   * 見出しは .message-titles-axis が absolute のため stack の margin では動かない。
+   */
+  .section-shell--message .message-titles-axis {
+    top: var(--message-title-sp-offset-down);
+    max-width: calc(100vw - 2 * var(--cross-inset));
+  }
+
+  .section-shell--message .message-titles-axis .message-tagline {
+    top: -10px;
+  }
+}
+
+.lead {
+  color: var(--text-secondary);
+  font-size: clamp(1rem, 1.8vw, 1.26rem);
+  line-height: 1.8;
+}
+
+/* Message と同一の見出し軸（Service / Approach / Network で共有）。ASM 縦位置は Approach のみ下げる */
+:where(.service-shell, .approach-shell, .network-shell, .company-shell, .contact-shell) {
+  --message-plane-w: calc(100vw - 2 * var(--cross-inset));
+  --message-cross-x: calc(
+    var(--cross-inset) + var(--overlay-focus-x, 0.4444444444444444) *
+      var(--message-plane-w) - var(--section-inline-pad)
+  );
+}
+
+@supports (width: 1dvw) {
+  :where(.service-shell, .approach-shell, .network-shell, .company-shell, .contact-shell) {
+    --message-plane-w: calc(100dvw - 2 * var(--cross-inset));
+  }
+}
+
+.service-shell {
+  align-items: stretch;
+  padding-top: 0;
+  padding-bottom: 0;
+  --asmn-cross-offset-x: 28px;
+  --asmn-cross-offset-y: 26px;
+  --service-pc-asmn-approach-entry-lift: 0px;
+}
+
+.approach-shell {
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  --asmn-cross-offset-x: 28px;
+  /* Service と同基準から下方向に調整（top = centerY - offsetY） */
+  --asmn-cross-offset-y: -19px;
+}
+
+@media (min-width: 769px) {
+  .approach-shell {
+    /* 見出し・キャッチのみ上げる量（ASMN は JS 側で同値補正して位置不変） */
+    --approach-titles-visual-lift: 35px;
+  }
+
+  .approach-shell .message-titles-stack {
+    transform: translateY(50px);
+  }
+
+  /*
+   * 見出し・日本語キャッチ：十字縦軸（--message-cross-x）中央 + visual-lift 上。
+   * ASMN スロットは stack 側のまま（位置不変）。
+   */
+  .approach-shell .message-titles-axis {
+    position: absolute;
+    top: 0;
+    left: var(--message-cross-x);
+    transform: translate(-50%, calc(-1 * var(--approach-titles-visual-lift, 35px)));
+    width: max-content;
+    max-width: min(calc(100vw - 2 * var(--cross-inset)), 42rem);
+    margin-inline: 0;
+    padding-inline: 0;
+    text-align: center;
+  }
+
+  .approach-shell .approach-heading-axis,
+  .approach-shell .approach-tagline-axis {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .approach-shell .approach-heading-axis .message-heading,
+  .approach-shell .approach-tagline-axis .message-tagline {
+    margin-inline: auto;
+    text-align: center;
+  }
+}
+
+.section-shell.company-shell {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  --asmn-cross-offset-x: 28px;
+  --asmn-cross-offset-y: -19px;
+  --company-plane-w: calc(100dvw - 2 * var(--cross-inset));
+  --company-plane-h: calc(var(--app-viewport-h, 100dvh) - 2 * var(--cross-inset));
+  /* GridOverlay 左端 7 行マークと同じ間隔（FOCUS_ROWS=7 → 6 分割） */
+  --company-focus-row-intervals: 6;
+  --company-table-col-start: 1;
+  /* 右端は交差点 7/1 の縦罫線（col 7） */
+  --company-table-col-end: 7;
+  --company-table-row-start: 1;
+  --company-row-h: calc(var(--company-plane-h) / var(--company-focus-row-intervals));
+  /* 罫線は十字アームと同一トークン。全幅/全高のため opacity で存在感を抑える */
+  --company-table-line-opacity: 0.42;
+  --company-table-origin-y: calc(
+    var(--cross-inset) + ((var(--company-table-row-start) - 1) / var(--company-focus-row-intervals)) *
+      var(--company-plane-h)
+  );
+  --company-focus-row: 6;
+  /* ラベル列幅（グリッド列数）。区切り縦線は col 3（2/9 → 3/9） */
+  --company-label-span: 2;
+  /* GridOverlay / FOCUS_COLS と同一（8 列） */
+  --company-grid-cols: 8;
+  --company-label-pad-inline-start: clamp(0.42rem, 1.05vw, 0.62rem);
+  --company-table-left: calc(
+    var(--cross-inset) + (var(--company-table-col-start) / var(--company-grid-cols)) *
+      var(--company-plane-w)
+  );
+  --company-table-origin-x: var(--company-table-left);
+  --company-asmn-estimated-h: clamp(0.9rem, 1.15vw, 1.05rem);
+  --company-title-gap: clamp(0.4rem, 1.1vw, 0.75rem);
+  /* 表ラベル列のテキスト開始位置（ASMN・見出し・キャッチの左揃え軸） */
+  --company-asmn-left: calc(
+    var(--company-table-left) + var(--company-label-pad-inline-start)
+  );
+  /* 入場：罫線ドロー → テキスト表示 */
+  --company-line-draw-duration: 0.85s;
+  --company-line-stagger-h: 72ms;
+  --company-line-v-start: 130ms;
+  --company-line-stagger-v: 88ms;
+  --company-text-reveal-base: 1200ms;
+  --company-text-row-stagger: 45ms;
+}
+
+@supports not (width: 1dvw) {
+  .section-shell.company-shell {
+    --company-plane-w: calc(100vw - 2 * var(--cross-inset));
+    --company-plane-h: calc(var(--app-viewport-h, 100vh) - 2 * var(--cross-inset));
+  }
+}
+
+.company-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.company-shell .message-titles-stack {
+  /*
+   * 十字 1/6 の ASMN 直下（AsmCrossEyebrow と同じ focusY 基準）。
+   * 表は absolute のため margin 押し下げは使わず、重なりで隠れないよう z-index を上げる。
+   */
+  position: absolute;
+  z-index: 3;
+  top: calc(
+    var(--cross-inset) + ((var(--company-focus-row) - 1) / var(--company-focus-row-intervals)) *
+      var(--company-plane-h) - var(--asmn-cross-offset-y) + var(--company-asmn-estimated-h) +
+      var(--company-title-gap)
+  );
+  left: 0;
+  width: 100%;
+  margin: 0;
+  min-height: 0;
+  transform: none;
+}
+
+/* ASMN・見出し・キャッチ：同一 stack 内で --company-asmn-left に左揃え */
+.company-shell .message-titles-stack .company-asmn-slot {
+  position: static;
+  min-height: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.company-shell .message-titles-stack .company-asmn-slot .asm-cross-eyebrow {
+  position: absolute;
+  left: var(--company-asmn-left);
+  top: calc(0px - var(--company-asmn-lift, 0px));
+  right: auto;
+  width: max-content;
+  max-width: min(42vw, 18rem);
+  margin: 0;
+  transform: none;
+  pointer-events: auto;
+  z-index: 4;
+}
+
+.company-shell .message-titles-axis {
+  left: var(--company-asmn-left);
+  transform: none;
+  text-align: left;
+  max-width: min(calc(100vw - var(--company-asmn-left) - var(--cross-inset)), 42rem);
+}
+
+.company-shell .message-titles-axis .message-heading {
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: clamp(0.35rem, 0.55vw, 0.48rem);
+}
+
+.company-shell .message-titles-axis .message-tagline {
+  font-size: clamp(0.8rem, 1.6vw, 1.12rem);
+}
+
+.company-body {
+  width: 100%;
+  margin-top: 0;
+}
+
+/*
+ * Company 表：cross-plane と同一座標（mark-x = col/9, mark-y = (row-1)/6）。
+ * 交差点 (1,1) 起点・(8,7) 最下段まで（5 行 + 最下交差）に罫線を置き、行高 = plane_h / 6 で＋と一致させる。
+ */
+.section-shell.company-shell .company-table-wrap {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: 2;
+  margin: 0;
+  height: calc(6 * var(--company-row-h));
+  /* cross-plane と同じ viewport 座標（padding ボックス原点 = セクション左上） */
+  top: calc(
+    var(--cross-inset) + ((var(--company-table-row-start) - 1) / var(--company-focus-row-intervals)) *
+      var(--company-plane-h)
+  );
+  left: var(--company-table-left);
+  width: calc(
+    ((var(--company-table-col-end) - var(--company-table-col-start)) / var(--company-grid-cols)) *
+      var(--company-plane-w)
+  );
+  /* 表エリア上でもセクションスワイプ／ホイールを通す（Contact .contact-form-wrap と同型） */
+  pointer-events: none;
+}
+
+/* 水平＝100vw / 垂直＝100vh まで延長する罫線（交差点座標は表セルと一致） */
+.company-table-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--company-table-line-opacity);
+}
+
+.section-shell.company-shell .company-table-line-h {
+  position: absolute;
+  left: calc(-1 * var(--company-table-origin-x));
+  width: 100vw;
+  height: var(--cross-arm-line-size);
+  /* 交差点 Y に線の中心を合わせる（scaleX アニメと transform を分離） */
+  top: calc(
+    (var(--line-row) - 1) * var(--company-row-h) - var(--cross-arm-line-size) / 2
+  );
+  background: var(--cross-arm-line-color);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.section-shell.company-shell .company-table-line-h.is-from-right {
+  transform-origin: right center;
+}
+
+.section-shell.company-shell .company-table-line-v {
+  position: absolute;
+  top: calc(-1 * var(--company-table-origin-y));
+  height: 100vh;
+  width: var(--cross-arm-line-size);
+  left: calc(
+    ((var(--line-col) - var(--company-table-col-start)) / var(--company-grid-cols)) *
+      var(--company-plane-w)
+  );
+  background: var(--cross-arm-line-color);
+  transform: scaleY(0);
+  transform-origin: top center;
+}
+
+.section-shell.company-shell .company-table-line-v.is-from-bottom {
+  transform-origin: bottom center;
+}
+
+.section-frame.is-active .section-shell.company-shell .company-table-line-h {
+  animation: company-line-draw-x var(--company-line-draw-duration) cubic-bezier(0.22, 0.64, 0.18, 1)
+    forwards;
+  animation-delay: calc((var(--line-row) - 1) * var(--company-line-stagger-h));
+}
+
+.section-frame.is-active .section-shell.company-shell .company-table-line-v {
+  animation: company-line-draw-y var(--company-line-draw-duration) cubic-bezier(0.22, 0.64, 0.18, 1)
+    forwards;
+  animation-delay: calc(
+    var(--company-line-v-start) + (var(--line-v-order) - 1) * var(--company-line-stagger-v)
+  );
+}
+
+@keyframes company-line-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes company-line-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* 罫線ドロー後にテキストを表示（Company のみ reveal タイミングを上書き） */
+.section-shell.company-shell .reveal-item {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  transition: none;
+}
+
+.section-shell.company-shell .company-table-label,
+.section-shell.company-shell .company-table-value {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+}
+
+/*
+ * 表など（タイトル帯クラス以外）。SP タイトル帯は company-entry-ready の統一リビールのみ。
+ */
+.section-frame.is-active
+  .section-shell.company-shell
+  .reveal-item:not(.company-unified-asmn):not(.company-title-unified) {
+  animation: company-text-reveal 0.52s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+}
+
+.section-frame.is-active
+  .section-shell.company-shell
+  .reveal-item.asm-cross-eyebrow:not(.company-unified-asmn) {
+  transform: translate3d(0, 0, 0);
+}
+
+/* PC: 罫線後にタイトル帯を段階表示（SP は company-entry-ready で同時リビール） */
+@media (min-width: 769px) {
+  .section-frame.is-active .section-shell.company-shell .reveal-item.company-unified-asmn,
+  .section-frame.is-active .section-shell.company-shell .reveal-item.company-title-unified {
+    animation: company-text-reveal 0.52s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+  }
+
+  .section-frame.is-active .section-shell.company-shell .reveal-delay-1.reveal-item {
+    animation-delay: var(--company-text-reveal-base);
+  }
+
+  .section-frame.is-active .section-shell.company-shell .reveal-delay-2.reveal-item {
+    animation-delay: calc(var(--company-text-reveal-base) + 70ms);
+  }
+
+  .section-frame.is-active .section-shell.company-shell .reveal-delay-3.reveal-item {
+    animation-delay: calc(var(--company-text-reveal-base) + 140ms);
+  }
+}
+
+.section-frame.is-active .section-shell.company-shell .company-table-label,
+.section-frame.is-active .section-shell.company-shell .company-table-value {
+  animation: company-text-reveal 0.48s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+  animation-delay: calc(
+    var(--company-text-reveal-base) + 180ms + var(--row-index, 0) * var(--company-text-row-stagger)
+  );
+}
+
+@keyframes company-text-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@supports (width: 1dvw) {
+  .section-shell.company-shell .company-table-line-h {
+    width: 100dvw;
+  }
+
+  .section-shell.company-shell .company-table-line-v {
+    height: 100dvh;
+  }
+}
+
+.company-table {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  margin: 0;
+  height: calc(5 * var(--company-row-h));
+}
+
+.company-table-row {
+  display: grid;
+  box-sizing: border-box;
+  grid-template-columns: calc(
+      var(--company-label-span) * var(--company-plane-w) / var(--company-grid-cols)
+    )
+    minmax(0, 1fr);
+  height: var(--company-row-h);
+  min-height: var(--company-row-h);
+  max-height: var(--company-row-h);
+  align-items: center;
+}
+
+.company-table-label {
+  box-sizing: border-box;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(0.55rem, 1.2vw, 0.85rem) 0 var(--company-label-pad-inline-start);
+  font-size: clamp(0.66rem, 0.82vw, 0.76rem);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+  color: rgba(200, 208, 236, 0.78);
+  white-space: nowrap;
+}
+
+.company-table-value {
+  box-sizing: border-box;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(0.62rem, 1.35vw, 0.92rem);
+  font-size: clamp(0.66rem, 0.82vw, 0.76rem);
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  color: rgba(236, 238, 251, 0.92);
+}
+
+/* ── Contact：Company と同型の＋交差罫線フォーム ── */
+.section-shell.contact-shell {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  --asmn-cross-offset-x: 28px;
+  --asmn-cross-offset-y: -19px;
+  --contact-plane-w: calc(100dvw - 2 * var(--cross-inset));
+  --contact-plane-h: calc(var(--app-viewport-h, 100dvh) - 2 * var(--cross-inset));
+  --contact-focus-row-intervals: 6;
+  --contact-form-col-start: 1;
+  /* 右端は交差点 7/1 の縦罫線（col 7） */
+  --contact-form-col-end: 7;
+  /* ラベル列幅（グリッド列数）。区切り縦線は col 3（2/8 → 3/8） */
+  --contact-label-span: 2;
+  /* GridOverlay / FOCUS_COLS と同一（8 列） */
+  --contact-grid-cols: 8;
+  --contact-form-row-start: 1;
+  --contact-form-field-units: 4;
+  --contact-form-row-units: 5;
+  --contact-row-h: calc(var(--contact-plane-h) / var(--contact-focus-row-intervals));
+  --contact-form-line-opacity: 0.42;
+  --contact-form-left: calc(
+    var(--cross-inset) + (var(--contact-form-col-start) / var(--contact-grid-cols)) *
+      var(--contact-plane-w)
+  );
+  --contact-form-origin-x: var(--contact-form-left);
+  --contact-form-origin-y: calc(
+    var(--cross-inset) + ((var(--contact-form-row-start) - 1) / var(--contact-focus-row-intervals)) *
+      var(--contact-plane-h)
+  );
+  --contact-focus-row: 6;
+  --contact-asmn-estimated-h: clamp(0.9rem, 1.15vw, 1.05rem);
+  --contact-title-gap: clamp(0.4rem, 1.1vw, 0.75rem);
+  /* タイトル帯の左揃え軸のみ Company と同型（フォームラベル pad は別トークン） */
+  --contact-title-pad-inline-start: clamp(0.42rem, 1.05vw, 0.62rem);
+  --contact-asmn-left: calc(
+    var(--contact-form-left) + var(--contact-title-pad-inline-start)
+  );
+  --contact-line-draw-duration: 0.85s;
+  --contact-line-stagger-h: 72ms;
+  --contact-line-v-start: 130ms;
+  --contact-line-stagger-v: 88ms;
+  --contact-text-reveal-base: 1200ms;
+  --contact-text-row-stagger: 45ms;
+  /* ラベル・プレイスホルダー共通タイポ（プレイスホルダーは左ラベルに合わせる） */
+  --contact-field-font-size: clamp(0.72rem, 0.92vw, 0.84rem);
+  --contact-field-font-weight: 500;
+  --contact-field-line-height: 1.45;
+  --contact-field-letter-spacing: 0.02em;
+  --contact-field-muted-color: rgba(200, 208, 236, 0.78);
+  --contact-field-value-color: rgba(236, 238, 251, 0.92);
+  --contact-field-pad-inline-end: clamp(0.55rem, 1.2vw, 0.85rem);
+  --contact-label-pad-inline-start: var(--contact-field-pad-inline-end);
+}
+
+@supports not (width: 1dvw) {
+  .section-shell.contact-shell {
+    --contact-plane-w: calc(100vw - 2 * var(--cross-inset));
+    --contact-plane-h: calc(var(--app-viewport-h, 100vh) - 2 * var(--cross-inset));
+  }
+}
+
+.contact-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+/* ASMN・見出し・キャッチ：Company と同型（フォーム位置は .contact-form-wrap のまま） */
+.contact-shell .message-titles-stack {
+  position: absolute;
+  z-index: 3;
+  top: calc(
+    var(--cross-inset) + ((var(--contact-focus-row) - 1) / var(--contact-focus-row-intervals)) *
+      var(--contact-plane-h) - var(--asmn-cross-offset-y) + var(--contact-asmn-estimated-h) +
+      var(--contact-title-gap)
+  );
+  left: 0;
+  width: 100%;
+  margin: 0;
+  min-height: 0;
+  transform: none;
+  pointer-events: none;
+}
+
+.contact-shell .message-titles-stack .contact-asmn-slot {
+  position: static;
+  min-height: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.contact-shell .message-titles-stack .contact-asmn-slot .asm-cross-eyebrow {
+  position: absolute;
+  left: var(--contact-asmn-left);
+  top: calc(0px - var(--contact-asmn-lift, 0px));
+  right: auto;
+  width: max-content;
+  max-width: min(42vw, 18rem);
+  margin: 0;
+  transform: none;
+  pointer-events: auto;
+  z-index: 4;
+}
+
+.contact-shell .message-titles-axis {
+  left: var(--contact-asmn-left);
+  transform: none;
+  text-align: left;
+  max-width: min(calc(100vw - var(--contact-asmn-left) - var(--cross-inset)), 42rem);
+  pointer-events: none;
+}
+
+.contact-shell .message-titles-axis .message-heading {
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: clamp(0.35rem, 0.55vw, 0.48rem);
+}
+
+.contact-shell .message-titles-axis .message-tagline {
+  font-size: clamp(0.8rem, 1.6vw, 1.12rem);
+}
+
+.section-shell.contact-shell .contact-form-wrap {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: 4;
+  margin: 0;
+  /* 5 行コンテンツ + 最下段交差（8/7）まで（Company 表と同型） */
+  height: calc(6 * var(--contact-row-h));
+  top: calc(
+    var(--cross-inset) + ((var(--contact-form-row-start) - 1) / var(--contact-focus-row-intervals)) *
+      var(--contact-plane-h)
+  );
+  left: var(--contact-form-left);
+  width: calc(
+    ((var(--contact-form-col-end) - var(--contact-form-col-start)) / var(--contact-grid-cols)) *
+      var(--contact-plane-w)
+  );
+}
+
+.contact-form-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--contact-form-line-opacity);
+}
+
+.section-shell.contact-shell .contact-form-line-h {
+  position: absolute;
+  left: calc(-1 * var(--contact-form-origin-x));
+  width: 100vw;
+  height: var(--cross-arm-line-size);
+  /* 交差点 Y に線の中心を合わせる（scaleX アニメと transform を分離） */
+  top: calc(
+    (var(--line-row) - 1) * var(--contact-row-h) - var(--cross-arm-line-size) / 2
+  );
+  background: var(--cross-arm-line-color);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.section-shell.contact-shell .contact-form-line-h.is-from-right {
+  transform-origin: right center;
+}
+
+.section-shell.contact-shell .contact-form-line-v {
+  position: absolute;
+  top: calc(-1 * var(--contact-form-origin-y));
+  height: 100vh;
+  width: var(--cross-arm-line-size);
+  left: calc(
+    ((var(--line-col) - var(--contact-form-col-start)) / var(--contact-grid-cols)) *
+      var(--contact-plane-w)
+  );
+  background: var(--cross-arm-line-color);
+  transform: scaleY(0);
+  transform-origin: top center;
+}
+
+.section-shell.contact-shell .contact-form-line-v.is-from-bottom {
+  transform-origin: bottom center;
+}
+
+.section-frame.is-active .section-shell.contact-shell .contact-form-line-h {
+  animation: company-line-draw-x var(--contact-line-draw-duration) cubic-bezier(0.22, 0.64, 0.18, 1)
+    forwards;
+  animation-delay: calc((var(--line-row) - 1) * var(--contact-line-stagger-h));
+}
+
+.section-frame.is-active .section-shell.contact-shell .contact-form-line-v {
+  animation: company-line-draw-y var(--contact-line-draw-duration) cubic-bezier(0.22, 0.64, 0.18, 1)
+    forwards;
+  animation-delay: calc(
+    var(--contact-line-v-start) + (var(--line-v-order) - 1) * var(--contact-line-stagger-v)
+  );
+}
+
+.section-shell.contact-shell .reveal-item {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  transition: none;
+}
+
+.section-shell.contact-shell .contact-form-label,
+.section-shell.contact-shell .contact-form-intro-text,
+.section-shell.contact-shell .contact-form-terms,
+.section-shell.contact-shell .contact-form-send-label,
+.section-shell.contact-shell .contact-form-placeholder {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+}
+
+/* 入力欄は常に操作可能・可視（opacity:0 だと入力しても見えない） */
+.section-shell.contact-shell .contact-form-control {
+  opacity: 1;
+  transform: none;
+}
+
+.section-frame.is-active
+  .section-shell.contact-shell
+  .reveal-item:not(.contact-unified-asmn):not(.contact-title-unified) {
+  animation: company-text-reveal 0.52s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+}
+
+.section-frame.is-active
+  .section-shell.contact-shell
+  .reveal-item.asm-cross-eyebrow:not(.contact-unified-asmn) {
+  transform: translate3d(0, 0, 0);
+}
+
+/* PC: 罫線後にタイトル帯を段階表示（SP は contact-entry-ready で同時リビール） */
+@media (min-width: 769px) {
+  .section-frame.is-active .section-shell.contact-shell .reveal-item.contact-unified-asmn,
+  .section-frame.is-active .section-shell.contact-shell .reveal-item.contact-title-unified {
+    animation: company-text-reveal 0.52s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+  }
+
+  .section-frame.is-active .section-shell.contact-shell .reveal-delay-1.reveal-item {
+    animation-delay: var(--contact-text-reveal-base);
+  }
+
+  .section-frame.is-active .section-shell.contact-shell .reveal-delay-2.reveal-item {
+    animation-delay: calc(var(--contact-text-reveal-base) + 70ms);
+  }
+
+  .section-frame.is-active .section-shell.contact-shell .reveal-delay-3.reveal-item {
+    animation-delay: calc(var(--contact-text-reveal-base) + 140ms);
+  }
+
+}
+
+.section-frame.is-active .section-shell.contact-shell .contact-form-label,
+.section-frame.is-active .section-shell.contact-shell .contact-form-intro-text,
+.section-frame.is-active .section-shell.contact-shell .contact-form-terms,
+.section-frame.is-active .section-shell.contact-shell .contact-form-send-label,
+.section-frame.is-active .section-shell.contact-shell .contact-form-placeholder {
+  animation: company-text-reveal 0.48s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+  animation-delay: calc(
+    var(--contact-text-reveal-base) + 180ms + var(--row-index, 0) * var(--contact-text-row-stagger)
+  );
+}
+
+@supports (width: 1dvw) {
+  .section-shell.contact-shell .contact-form-line-h {
+    width: 100dvw;
+  }
+
+  .section-shell.contact-shell .contact-form-line-v {
+    height: 100dvh;
+  }
+}
+
+.contact-form {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  margin: 0;
+  height: calc(var(--contact-form-field-units) * var(--contact-row-h));
+}
+
+.contact-form-intro {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.contact-form-row--intro {
+  align-items: center;
+}
+
+.contact-form-intro-text {
+  box-sizing: border-box;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(0.55rem, 1.2vw, 0.85rem);
+  font-size: clamp(0.68rem, 0.88vw, 0.8rem);
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+  color: rgba(200, 208, 236, 0.78);
+}
+
+.contact-form-row {
+  display: grid;
+  box-sizing: border-box;
+  grid-template-columns: calc(
+      var(--contact-label-span) * var(--contact-plane-w) / var(--contact-grid-cols)
+    )
+    minmax(0, 1fr);
+  height: var(--contact-row-h);
+  min-height: var(--contact-row-h);
+  max-height: var(--contact-row-h);
+  align-items: center;
+}
+
+.contact-form-row--double {
+  height: calc(2 * var(--contact-row-h));
+  min-height: calc(2 * var(--contact-row-h));
+  max-height: calc(2 * var(--contact-row-h));
+  align-items: stretch;
+}
+
+.contact-form-field {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.contact-form-placeholder {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 var(--contact-field-pad-inline-end);
+  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-size: var(--contact-field-font-size);
+  font-weight: var(--contact-field-font-weight);
+  letter-spacing: var(--contact-field-letter-spacing);
+  line-height: var(--contact-field-line-height);
+  color: var(--contact-field-muted-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.contact-form-field .contact-form-control:not(:placeholder-shown) ~ .contact-form-placeholder {
+  opacity: 0;
+  visibility: hidden;
+  animation: none;
+}
+
+.contact-form-field .contact-form-control::placeholder {
+  color: transparent;
+}
+
+.contact-form-label {
+  box-sizing: border-box;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--contact-field-pad-inline-end);
+  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-size: var(--contact-field-font-size);
+  font-weight: var(--contact-field-font-weight);
+  letter-spacing: var(--contact-field-letter-spacing);
+  line-height: var(--contact-field-line-height);
+  color: var(--contact-field-muted-color);
+  white-space: nowrap;
+}
+
+.contact-form-row--double:not(.contact-form-row--message) .contact-form-label {
+  align-items: flex-start;
+  padding-top: clamp(0.45rem, 1.1vw, 0.75rem);
+}
+
+.contact-form-row--message {
+  display: block;
+}
+
+.contact-form-message-grid {
+  --contact-textarea-slot-pad-block: 5px;
+  --contact-textarea-inner-h: calc(
+    var(--contact-row-h) - 2 * var(--contact-textarea-slot-pad-block)
+  );
+  --contact-textarea-line-box: calc(
+    var(--contact-field-font-size) * var(--contact-field-line-height)
+  );
+  --contact-textarea-placeholder-pad-block: max(
+    0px,
+    calc((var(--contact-textarea-inner-h) - var(--contact-textarea-line-box)) / 2)
+  );
+  display: grid;
+  grid-template-columns: calc(
+      var(--contact-label-span) * var(--contact-plane-w) / var(--contact-grid-cols)
+    )
+    minmax(0, 1fr);
+  grid-template-rows: 1fr var(--contact-row-h);
+  height: calc(2 * var(--contact-row-h));
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.contact-form-message-grid .contact-form-label {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0 var(--contact-field-pad-inline-end) 0 var(--contact-label-pad-inline-start);
+  padding-bottom: var(--contact-row-h);
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+.contact-form-textarea-slot {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  justify-content: flex-start;
+  height: 100%;
+  min-height: 0;
+  padding-block: var(--contact-textarea-slot-pad-block);
+  padding-inline: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 問い合わせ欄: 氏名・メールのプレイスホルダーと同じ padding-inline + 縦中央 */
+.contact-form-textarea-slot > .contact-form-placeholder--textarea {
+  inset: auto;
+  left: 0;
+  right: 0;
+  top: calc(
+    var(--contact-textarea-slot-pad-block) + var(--contact-textarea-placeholder-pad-block)
+  );
+  height: var(--contact-textarea-line-box);
+  display: block;
+  padding: 0 var(--contact-field-pad-inline-end);
+  white-space: normal;
+  overflow: hidden;
+}
+
+.contact-form-textarea-slot
+  .contact-form-control--textarea:not(:placeholder-shown)
+  ~ .contact-form-placeholder {
+  opacity: 0;
+  visibility: hidden;
+  animation: none;
+}
+
+.contact-form-message-grid .contact-form-control--textarea {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  margin: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
+  padding-inline: var(--contact-field-pad-inline-end);
+  line-height: var(--contact-field-line-height);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  resize: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 208, 236, 0.5) transparent;
+}
+
+.contact-form-message-grid .contact-form-control--textarea:placeholder-shown {
+  padding-block: var(--contact-textarea-placeholder-pad-block);
+}
+
+.contact-form-message-grid .contact-form-control--textarea:not(:placeholder-shown) {
+  padding-block: 0;
+}
+
+.contact-form-message-grid .contact-form-control--textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.contact-form-message-grid .contact-form-control--textarea::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: rgba(200, 208, 236, 0.5);
+}
+
+.contact-form-message-grid .contact-form-control--textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.contact-form-message-grid .contact-form-control--textarea::placeholder {
+  color: transparent;
+}
+
+.contact-form-terms {
+  grid-column: 1;
+  grid-row: 2;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  width: 100%;
+  height: var(--contact-row-h);
+  min-height: var(--contact-row-h);
+  margin: 0;
+  padding: 0 clamp(0.35rem, 0.9vw, 0.55rem);
+  font-size: clamp(0.72rem, 0.92vw, 0.84rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+  white-space: nowrap;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: rgba(200, 208, 236, 0.45);
+  transition: color 0.35s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .contact-form-terms:hover,
+  .contact-form-terms:focus-visible {
+    color: rgba(236, 238, 251, 0.92);
+  }
+}
+
+.contact-form-terms:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.35);
+  outline-offset: -1px;
+}
+
+@media (max-width: 768px), (hover: none) {
+  .contact-form-terms {
+    color: rgba(236, 238, 251, 0.92);
+  }
+
+  .contact-form-terms:active {
+    color: rgba(255, 255, 255, 0.98);
+  }
+}
+
+.contact-form-message-grid .contact-form-send-cell {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.section-shell.contact-shell .contact-form-wrap {
+  /* 余白・罫線上はスワイプを通し、入力要素のみ操作可能にする */
+  pointer-events: none;
+}
+
+.contact-form-wrap :is(input, textarea, button, a, label) {
+  position: relative;
+  z-index: 6;
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+
+.contact-form-control {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0 var(--contact-field-pad-inline-end);
+  border: none;
+  background: transparent;
+  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-size: var(--contact-field-font-size);
+  font-weight: var(--contact-field-font-weight);
+  line-height: var(--contact-field-line-height);
+  letter-spacing: var(--contact-field-letter-spacing);
+  color: var(--contact-field-value-color);
+  outline: none;
+  resize: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.contact-form-control::placeholder {
+  font-family: inherit;
+  font-size: var(--contact-field-font-size);
+  font-weight: var(--contact-field-font-weight);
+  line-height: var(--contact-field-line-height);
+  letter-spacing: var(--contact-field-letter-spacing);
+  color: var(--contact-field-muted-color);
+  opacity: 1;
+}
+
+/* 入力中テキストはプレイスホルダーよりやや明るく（サイズはラベルと同じ） */
+.contact-form-control:not(:placeholder-shown) {
+  font-weight: 400;
+}
+
+.contact-form-wrap input.contact-form-control {
+  height: 100%;
+}
+
+.contact-form-control--textarea {
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: var(--contact-field-line-height);
+}
+
+.contact-form-actions.contact-form-send-cell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  align-self: stretch;
+  width: 100%;
+  height: var(--contact-row-h);
+  min-height: var(--contact-row-h);
+  margin: 0;
+  padding: 0 clamp(0.55rem, 1.2vw, 0.85rem);
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  overflow: hidden;
+}
+
+/* 白塗りではなく、背面と difference 合成で色反転 */
+.contact-form-send-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: rgb(0, 0, 0);
+  mix-blend-mode: difference;
+  transition: opacity 0.4s ease;
+}
+
+.contact-form-send-label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(0.35rem, 0.8vw, 0.55rem);
+  font-family: var(--font-din-2014), var(--font-noto-sans-jp), sans-serif;
+  font-size: clamp(0.82rem, 1.05vw, 0.96rem);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: rgba(236, 238, 251, 0.92);
+  mix-blend-mode: normal;
+  transition: color 0.35s ease;
+}
+
+.contact-form-send-arrow {
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .contact-form-send-cell:hover::before,
+  .contact-form-send-cell:focus-visible::before {
+    opacity: 0.15;
+  }
+
+  .contact-form-send-cell:hover .contact-form-send-label,
+  .contact-form-send-cell:focus-visible .contact-form-send-label {
+    color: rgba(255, 255, 255, 0.98);
+  }
+
+  .contact-form-send-cell:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.35);
+    outline-offset: -1px;
+  }
+}
+
+@media (max-width: 768px), (hover: none) {
+  .contact-form-send-cell:active::before {
+    opacity: 0.15;
+  }
+
+  .contact-form-send-cell:active .contact-form-send-label {
+    color: rgba(255, 255, 255, 0.98);
+  }
+}
+
+/*
+ * Network：`.section-shell` は既定が flex-row + align-items:center のため、子が2つだと横並び／折返しで崩れる。
+ * 縦積みは JSX で `.network-stack` にまとめ、このセレクタで column を明示する。
+ */
+.network-shell {
+  --asmn-cross-offset-x: 28px;
+  /* Network の ASMN のみ 50px 上（top = centerY - offsetY のため +50） */
+  --asmn-cross-offset-y: 31px;
+  --network-asmn-above-heading-gap: 8px;
+  --network-asmn-lift: 20px;
+}
+
+/*
+ * Network：十字の Y に合わせた巨大 padding-top は、見出し＋本文ブロック全体を下へ押し、
+ * 本文（1/1〜4/4 のコンテンツ群）が画面下端に固定される原因になる。
+ * 縦位置は通常セクションと同じパディングで上詰めし、見出しは下の margin でだけ調整する。
+ */
+.section-shell.network-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  padding: clamp(1.2rem, 2vw, 2rem) var(--section-inline-pad);
+}
+
+.network-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+/* Network：十字（ASM）行 → 全幅のタイトル行。見出しの --message-cross-x はセクション幅基準のまま */
+.network-eyebrow-row {
+  width: 100%;
+  flex-shrink: 0;
+  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+.approach-body {
+  width: 100%;
+  margin-top: clamp(0.25rem, 2vw, 1.25rem);
+}
+
+.network-body {
+  width: 100%;
+  margin-top: clamp(0.25rem, 2vw, 1.25rem);
+}
+
+/* Network 本文グリッド：左寄せ（1/1〜4/4 ゾーン用のカラム配置と整合） */
+.network-body-grid {
+  justify-items: start;
+}
+
+/*
+ * Network 本文：リストは横に項目＋ホバー詳細を並べるため、セルはフル幅・読み幅のみ上限。
+ */
+.network-content-column {
+  justify-self: start;
+  align-self: start;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: min(32rem, 100%);
+  margin-inline: 0;
+  padding-inline-start: clamp(0.25rem, 1vw, 0.5rem);
+  text-align: left;
+}
+
+/* Network PC：タイトル margin ハック・本文オフセット（SP には適用しない） */
+@media (min-width: 769px) {
+  .network-shell {
+    /* ASMN 上端を十字アーム（5/5 交差点）から下へ（AsmCrossEyebrow PC 分支） */
+    --network-pc-asmn-below-cross-arm: 20px;
+    --network-titles-reveal-duration: 0.7s;
+  }
+
+  .section-frame.is-active:has(.network-shell) {
+    overflow: visible;
+  }
+
+  .section-frame.is-active > .section-shell.network-shell {
+    overflow: visible;
+  }
+
+  /*
+   * グローバル .message-titles-axis { position:absolute; top:0 } を上書き。
+   * 見出し帯は stack 内の通常フローにし、ASMN を見出し直上へ載せる。
+   */
+  .network-shell > .network-stack > .message-titles-stack {
+    position: relative;
+    z-index: 6;
+    margin-top: 440px;
+    transform: none;
+    margin-bottom: clamp(0.65rem, 2vw, 1.15rem);
+    min-height: clamp(5rem, 11vw, 7.5rem);
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .network-shell > .network-stack > .message-titles-stack .message-titles-axis {
+    position: relative;
+    top: auto;
+    left: var(--message-cross-x);
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: min(calc(100vw - 2 * var(--cross-inset)), 42rem);
+    margin-inline: 0;
+    margin-top: calc(var(--network-asmn-above-heading-gap, 8px) + 1.05rem);
+    padding-inline: 0;
+    text-align: center;
+    pointer-events: auto;
+  }
+
+  .network-shell .network-tagline-axis .message-tagline {
+    white-space: normal;
+  }
+
+  .network-shell .network-tagline-break-sp {
+    display: block;
+  }
+
+  .network-shell > .network-stack > .message-titles-stack .network-asmn-slot {
+    position: static;
+    min-height: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .network-shell > .network-stack > .message-titles-stack .network-asmn-slot .asm-cross-eyebrow {
+    --network-pc-asmn-offset-x: 55px;
+    z-index: 12;
+    pointer-events: auto;
+  }
+
+  .network-shell .network-body {
+    position: relative;
+    z-index: 1;
+    margin-top: calc(clamp(0.25rem, 2vw, 1.25rem) - 440px);
+  }
+
+  /*
+   * 本文（リード・提携専門家・チップ）の座標は JS（1/1〜5/4 中央）で同期。
+   * 見た目の幅のみ CSS で制限。
+   */
+  .network-content-column {
+    padding-inline-start: clamp(0.35rem, 1.2vw, 0.65rem);
+    width: fit-content;
+    max-width: min(36rem, calc(100vw - 2 * var(--cross-inset) - 4rem));
+  }
+
+  /* SP 同型：2列×3行チップ（縦リストは非表示） */
+  .network-shell .network-list {
+    display: none;
+  }
+
+  .network-shell .network-chip-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.55rem, 1.2vw, 0.85rem) clamp(0.5rem, 1vw, 0.75rem);
+    align-items: start;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    padding-bottom: clamp(1rem, 2.5vw, 1.75rem);
+  }
+
+  .network-shell .network-chip {
+    --approach-chip-reveal-duration: 0.18s;
+    --approach-chip-accent: 0;
+    --network-chip-pad-y: clamp(0.58rem, 0.9vw, 0.78rem);
+    --network-chip-pad-x: clamp(0.52rem, 0.82vw, 0.7rem);
+    position: relative;
+    z-index: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+    border: 1px solid rgba(220, 226, 252, 0.14);
+    padding: var(--network-chip-pad-y) var(--network-chip-pad-x);
+    outline: none;
+    cursor: pointer;
+    /*
+     * 2列グリッド: z-index 遅延なし（下段→上段移動時に半透明パネルが上に残らない）
+     */
+    transition: --approach-chip-accent var(--approach-chip-reveal-duration) ease, z-index 0s;
+  }
+
+  /*
+   * PC 左上コンテンツ: Approach チップ（reveal-delay-4）同型 transition。
+   * 見出し delay-2・キャッチ delay-3・ASMN は Approach と同じグローバルルール。
+   * 座標確定前の誤位置フェードを防ぐため network-pc-reveal-go まで非表示。
+   */
+  .network-shell:not(.network-pc-reveal-go) .network-intro.reveal-item,
+  .network-shell:not(.network-pc-reveal-go) .network-list-kicker.reveal-item,
+  .network-shell:not(.network-pc-reveal-go) .network-chip.reveal-item,
+  .section-frame.is-active
+    .network-shell:not(.network-pc-reveal-go)
+    .network-intro.reveal-item,
+  .section-frame.is-active
+    .network-shell:not(.network-pc-reveal-go)
+    .network-list-kicker.reveal-item,
+  .section-frame.is-active
+    .network-shell:not(.network-pc-reveal-go)
+    .network-chip.reveal-item {
+    opacity: 0 !important;
+    transform: translate3d(0, 18px, 0) !important;
+    visibility: hidden;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .network-shell .network-intro.reveal-item,
+  .network-shell .network-list-kicker.reveal-item {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    backface-visibility: hidden;
+    transition:
+      opacity 0.52s ease,
+      transform 0.7s cubic-bezier(0.2, 0.65, 0.25, 1);
+  }
+
+  .network-shell .network-chip.reveal-item {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    backface-visibility: hidden;
+    transition:
+      opacity 0.52s ease,
+      transform 0.7s cubic-bezier(0.2, 0.65, 0.25, 1),
+      --approach-chip-accent var(--approach-chip-reveal-duration) ease,
+      z-index 0s;
+  }
+
+  .section-frame.is-active
+    .network-shell.network-pc-content-ready.network-pc-reveal-go
+    .network-intro.reveal-item,
+  .section-frame.is-active
+    .network-shell.network-pc-content-ready.network-pc-reveal-go
+    .network-list-kicker.reveal-item,
+  .section-frame.is-active
+    .network-shell.network-pc-content-ready.network-pc-reveal-go
+    .network-chip.reveal-item {
+    visibility: visible;
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .section-frame.is-active
+    .network-shell.network-pc-content-ready.network-pc-reveal-go
+    .network-intro.reveal-delay-4.reveal-item,
+  .section-frame.is-active
+    .network-shell.network-pc-content-ready.network-pc-reveal-go
+    .network-list-kicker.reveal-delay-4.reveal-item {
+    transition-delay: 0s, 0s;
+  }
+
+  .section-frame.is-active
+    .network-shell.network-pc-content-ready.network-pc-reveal-go
+    .network-chip.reveal-delay-4.reveal-item {
+    transition-delay: 0s, 0s, 0s, 0s;
+  }
+
+  .network-shell .network-chip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    border: 1px solid rgba(200, 215, 252, 0.35);
+    opacity: var(--approach-chip-accent);
+    pointer-events: none;
+  }
+
+  .network-shell .network-chip::after {
+    content: "";
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 0.45rem;
+    pointer-events: auto;
+  }
+
+  /* クリック固定（is-open）時のみチップ→詳細の隙間ブリッジ */
+  .network-shell .network-chip.is-open:not(.is-hover-dismissed)::after {
+    display: block;
+  }
+
+  .network-shell .network-chip:focus-visible,
+  .network-shell .network-chip.is-open {
+    --approach-chip-accent: 1;
+    z-index: 40;
+    isolation: isolate;
+    transition: --approach-chip-accent 0s, z-index 0s;
+    transition-delay: 0s;
+  }
+
+  /* ホバー出現は親ラベル（.network-chip-head）上のみ */
+  @media (hover: hover) and (pointer: fine) {
+    .network-shell .network-chip:has(.network-chip-head:hover):not(.is-hover-dismissed) {
+      --approach-chip-accent: 1;
+      z-index: 40;
+      isolation: isolate;
+      transition: --approach-chip-accent 0s, z-index 0s;
+      transition-delay: 0s;
+    }
+  }
+
+  .network-shell .network-chip.is-hover-dismissed,
+  .network-shell .network-chip.is-hover-dismissed:has(.network-chip-head:hover) {
+    --approach-chip-accent: 0;
+    transition: --approach-chip-accent var(--approach-chip-reveal-duration) ease, z-index 0s;
+  }
+
+  .network-shell .network-chip:focus-visible {
+    box-shadow: 0 0 0 1px rgba(171, 226, 255, 0.35);
+  }
+
+  /*
+   * ラベル＝ホバー領域（枠内全体）。chip の padding 分を負マージンで覆い縦幅は chip 側で確保。
+   */
+  .network-shell .network-chip-head {
+    box-sizing: border-box;
+    width: calc(100% + 2 * var(--network-chip-pad-x));
+    min-width: 0;
+    margin: calc(-1 * var(--network-chip-pad-y)) calc(-1 * var(--network-chip-pad-x));
+    padding: var(--network-chip-pad-y) var(--network-chip-pad-x);
+    text-align: center;
+    color: var(--text-secondary);
+    font-family: var(--font-noto-sans-jp), sans-serif;
+    font-size: clamp(0.65rem, 0.82vw, 0.72rem);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    line-height: 1.28;
+    text-transform: none;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+
+  /*
+   * 詳細パネル配色は .approach-chip-detail と同型。
+   * 2列重なり対策: backdrop-filter は背面チップを透過するため使わず、
+   * surface + 5%白の重ねで同系色を不透明に再現。文言のみ accent でフェード。
+   */
+  .network-shell .network-chip-detail {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    right: 0;
+    top: calc(100% + 0.45rem);
+    bottom: auto;
+    margin: 0;
+    padding: 0.85rem 0.75rem;
+    border: 1px solid rgba(220, 226, 252, 0.16);
+    border-radius: 2px;
+    background:
+      linear-gradient(rgb(255 255 255 / 5%), rgb(255 255 255 / 5%)), var(--surface);
+    opacity: 1;
+    visibility: hidden;
+    pointer-events: none;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 35%);
+    isolation: isolate;
+    overflow: hidden;
+    transition: visibility 0s;
+  }
+
+  .network-shell .network-chip-body {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(22vh, 140px);
+    overflow-y: auto;
+    opacity: var(--approach-chip-accent);
+    font-family: var(--font-noto-sans-jp), sans-serif;
+    font-size: clamp(0.62rem, 0.78vw, 0.68rem);
+    font-weight: 400;
+    line-height: 1.48;
+    letter-spacing: 0.02em;
+    text-align: left;
+    color: rgba(228, 232, 250, 0.88);
+    scrollbar-width: thin;
+    transition: opacity var(--approach-chip-reveal-duration) ease;
+  }
+
+  .network-shell .network-chip.is-open:not(.is-hover-dismissed) .network-chip-detail {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .network-shell
+      .network-chip:has(.network-chip-head:hover):not(.is-hover-dismissed)
+      .network-chip-detail {
+      visibility: visible;
+      pointer-events: none;
+    }
+  }
+}
+
+.network-content-column .network-intro {
+  max-width: 100%;
+  font-size: clamp(0.72rem, 1vw, 0.78rem);
+  line-height: 1.6;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+}
+
+/* Network：monopo 系の縦リスト（区切り線）＋ホバーで右カラムに詳細 */
+.network-list-kicker {
+  margin: 0 0 clamp(0.45rem, 1.2vw, 0.65rem);
+  font-family: var(--font-noto-sans-jp), sans-serif;
+  font-size: clamp(0.58rem, 0.72vw, 0.65rem);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: rgba(200, 208, 236, 0.72);
+}
+
+.network-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+}
+
+.network-list-row {
+  display: grid;
+  grid-template-columns: minmax(6.75rem, 9.5rem) minmax(0, 1fr);
+  gap: clamp(0.65rem, 2vw, 1.15rem);
+  align-items: baseline;
+  padding: clamp(0.32rem, 0.85vw, 0.45rem) 0;
+  border-bottom: 1px solid rgba(220, 226, 252, 0.22);
+  outline: none;
+  cursor: default;
+}
+
+.network-list-row:first-of-type {
+  border-top: 1px solid rgba(220, 226, 252, 0.22);
+}
+
+.network-list-label {
+  font-family: var(--font-noto-sans-jp), sans-serif;
+  font-size: clamp(0.65rem, 0.82vw, 0.72rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  color: rgba(236, 238, 251, 0.92);
+}
+
+.network-list-detail {
+  margin: 0;
+  font-size: clamp(0.62rem, 0.78vw, 0.68rem);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: rgba(210, 218, 242, 0.82);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition:
+    opacity 0.32s ease,
+    transform 0.32s ease;
+  pointer-events: none;
+}
+
+.network-list-row:hover .network-list-detail,
+.network-list-row:focus-visible .network-list-detail {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.network-list-row:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(171, 226, 255, 0.35);
+}
+
+/* Network：提携専門家チップ基盤（表示切替は shell 内・ブレークポイント別） */
+.network-chip-grid {
+  display: none;
+  gap: clamp(0.65rem, 2vw, 0.95rem);
+  grid-template-columns: 1fr;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Network PC：2列チップ表示（上記 display:none より後・同一詳細度で確実に上書き） */
+@media (min-width: 769px) {
+  .network-shell .network-list {
+    display: none;
+  }
+
+  .network-shell .network-chip-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.55rem, 1.2vw, 0.85rem) clamp(0.5rem, 1vw, 0.75rem);
+    align-items: start;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    padding-bottom: clamp(1rem, 2.5vw, 1.75rem);
+  }
+}
+
+@media (max-width: 768px) {
+  /*
+   * Network SP: ASMN → Network → 日本語キャッチ（Approach と同系統・十字 row 5 基準）
+   */
+  .network-shell {
+    position: relative;
+    --network-asmn-above-heading-gap: 8px;
+    --network-asmn-lift: 20px;
+    --network-heading-block-shift-down: 20px;
+    --network-heading-tagline-gap: 0.38rem;
+    /* 見出し帯：十字交点（col 5 / row 5）に中央揃え */
+    --network-titles-width: min(80%, calc(100vw - 2 * var(--cross-inset)));
+    --network-plane-h: calc(100vh - 2 * var(--cross-inset));
+    --network-cross-arm-y: calc(var(--cross-inset) + (4 / 6) * var(--network-plane-h));
+    /* 本文（リード＋リスト）：1/1〜7/4 内でグリッド幅の約120% */
+    --network-content-width-scale: 1.2;
+    --network-content-cross-pad: 4px;
+    --network-content-offset-down: 60px;
+  /* コンテンツ下端とタイトル帯上端のあいだ */
+    --network-content-above-titles-gap: 16px;
+    --network-content-inset-right: 0px;
+    --network-body-base-margin-down: 0px;
+    --network-body-offset-extra: 0px;
+    --network-titles-band-height: clamp(6.25rem, 20vw, 8.5rem);
+    --network-titles-reveal-duration: 0.7s;
+    --network-content-reveal-delay: 0.38s;
+    /*
+     * コンテンツ下端予約（タイトル帯を中央へ移してもコンテンツ位置は変えない）
+     */
+    --network-titles-inset-from-bottom: calc(
+      env(safe-area-inset-bottom, 0px) + clamp(2.25rem, 9vw, 3.75rem)
+    );
+    --network-content-bottom-reserve: calc(
+      var(--network-titles-inset-from-bottom) + var(--network-titles-band-height) +
+        var(--network-content-above-titles-gap)
+    );
+    --message-asmn-en-offset-x: 0px;
+    --message-asmn-extra-lift: 0px;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: visible;
+    padding-top: clamp(1rem, 2vw, 1.25rem);
+    padding-bottom: clamp(1rem, 2vw, 1.25rem);
+  }
+
+  @supports (height: 100dvh) {
+    .network-shell {
+      --network-plane-h: calc(100dvh - 2 * var(--cross-inset));
+    }
+  }
+
+  .section-frame.is-active > .network-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .section-frame.is-active > .network-shell > .network-stack {
+    position: relative;
+    flex: 1 1 auto;
+    align-self: stretch;
+    width: 100%;
+    min-height: 100%;
+    height: 100%;
+  }
+
+  .section-frame.is-active:has(.network-shell) {
+    overflow: visible;
+  }
+
+  /*
+   * ASMN・見出し・キャッチ：十字 row 5 の交差点に縦横中央揃え（JS 配置なし）
+   */
+  .section-frame.is-active > .network-shell > .network-stack > .message-titles-stack {
+    position: absolute;
+    top: var(--network-cross-arm-y);
+    bottom: auto;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    overflow: visible;
+    transform: translateY(-50%);
+  }
+
+  .network-shell > .network-stack > .message-titles-stack .network-asmn-slot {
+    position: static;
+    min-height: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  /* ASMN 位置は Approach 同型で JS 配置（keyframes は translateY のみ） */
+  .network-shell > .network-stack > .message-titles-stack .network-asmn-slot .asm-cross-eyebrow {
+    z-index: 11;
+    pointer-events: auto;
+  }
+
+  /* リビール中: 本文レイアウト同期で left が揺れないようタイトル帯を分離 */
+  .network-shell[data-network-asm-lock]
+    > .network-stack
+    > .message-titles-stack {
+    contain: layout style paint;
+  }
+
+  .network-shell[data-network-asm-lock] .network-asmn-slot .asm-cross-eyebrow {
+    will-change: transform, opacity;
+  }
+
+  .network-shell > .network-stack > .message-titles-stack .message-titles-axis {
+    position: relative;
+    left: var(--message-cross-x);
+    width: var(--network-titles-width);
+    max-width: var(--network-titles-width);
+    margin-inline: 0;
+    margin-top: calc(
+      var(--network-asmn-above-heading-gap) + 1.05rem + var(--network-heading-block-shift-down, 0px)
+    );
+    padding-inline: 0;
+    box-sizing: border-box;
+    text-align: center;
+    transform: translateX(-50%);
+    pointer-events: auto;
+  }
+
+  .network-stack {
+    position: relative;
+  }
+
+  .network-shell .network-heading-axis {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .network-shell .network-heading-axis .message-heading {
+    margin-inline: auto;
+    margin-bottom: var(--network-heading-tagline-gap);
+    text-align: center;
+    transform: none;
+  }
+
+  .network-shell .network-tagline-axis {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .network-shell .network-tagline-axis .message-tagline {
+    position: relative;
+    margin-inline: auto;
+    text-align: center;
+    line-height: 1.14;
+    white-space: normal;
+    transform: none;
+  }
+
+  .network-shell .network-tagline-break-sp {
+    display: block;
+  }
+
+  /*
+   * Network SP: ASMN・見出し・キャッチ同時リビール → 上部コンテンツ（リード・チップ）0.38s 遅延。
+   * タイトル帯は CSS 固定。本文位置は network-layout-ready まで JS 同期のみ。
+   */
+  .network-shell:not(.network-layout-ready) .network-asmn-slot .reveal-item.network-unified-asmn {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .section-frame.is-active
+    .network-shell:not(.network-layout-ready)
+    .message-heading.reveal-item,
+  .section-frame.is-active
+    .network-shell:not(.network-layout-ready)
+    .message-tagline.reveal-item,
+  .section-frame.is-active
+    .network-shell:not(.network-titles-reveal-go)
+    .message-heading.reveal-item,
+  .section-frame.is-active
+    .network-shell:not(.network-titles-reveal-go)
+    .message-tagline.reveal-item,
+  .section-frame.is-active
+    .network-shell:not(.network-titles-reveal-go)
+    .network-content-column
+    .reveal-item,
+  .section-frame.is-active
+    .network-shell:not(.network-titles-reveal-go)
+    .network-chip.reveal-item {
+    opacity: 0 !important;
+    transform: translate3d(0, 18px, 0) !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* グローバル company-text-reveal 抑止（reveal-go 前のみ） */
+  .network-shell:not(.network-titles-reveal-go)
+    .network-asmn-slot
+    .reveal-item.network-unified-asmn,
+  .section-frame.is-active
+    .network-shell:not(.network-titles-reveal-go)
+    .reveal-item.asm-cross-eyebrow:not(.hero-bilingual-reveal) {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .network-shell.network-layout-ready:not(.network-titles-reveal-go)
+    .network-asmn-slot
+    .reveal-item.network-unified-asmn {
+    visibility: visible;
+    opacity: 0 !important;
+    transform: translate3d(0, 18px, 0) !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .network-shell.network-layout-ready:not(.network-titles-reveal-go) .message-heading.reveal-item,
+  .network-shell.network-layout-ready:not(.network-titles-reveal-go) .message-tagline.reveal-item,
+  .network-shell.network-layout-ready:not(.network-titles-reveal-go)
+    .network-content-column
+    .reveal-item,
+  .network-shell.network-layout-ready:not(.network-titles-reveal-go)
+    .network-chip.reveal-item {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .network-shell.network-layout-ready.network-titles-reveal-go
+    .message-heading.reveal-item,
+  .network-shell.network-layout-ready.network-titles-reveal-go
+    .message-tagline.reveal-item,
+  .network-shell.network-layout-ready.network-titles-reveal-go
+    .network-asmn-slot
+    .reveal-item.network-unified-asmn,
+  .network-shell.network-layout-ready.network-titles-reveal-go
+    .network-chip.reveal-item {
+    visibility: visible;
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    transition: none !important;
+    animation: network-titles-unified-reveal var(--network-titles-reveal-duration)
+      cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: 0s !important;
+    /* 見出し・キャッチと同時（delay クラスは無効化） */
+  }
+
+  .section-frame.is-active
+    .network-shell.network-layout-ready.network-titles-reveal-go
+    .message-heading.reveal-delay-2.reveal-item,
+  .section-frame.is-active
+    .network-shell.network-layout-ready.network-titles-reveal-go
+    .message-tagline.reveal-delay-3.reveal-item,
+  .section-frame.is-active
+    .network-shell.network-layout-ready.network-titles-reveal-go
+    .network-chip.reveal-delay-3.reveal-item {
+    animation-delay: 0s !important;
+  }
+
+  .section-frame.is-active
+    .network-shell.network-layout-ready.network-titles-reveal-go
+    .network-content-column
+    .reveal-item.reveal-delay-4 {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition:
+      opacity 0.52s ease,
+      transform 0.7s cubic-bezier(0.2, 0.65, 0.25, 1);
+    transition-delay: var(--network-content-reveal-delay);
+  }
+
+  .network-shell .network-body {
+    margin-top: 0;
+    position: relative;
+    z-index: 1;
+    min-height: 0;
+  }
+
+  .network-shell .network-body-grid {
+    position: relative;
+    justify-items: stretch;
+    min-height: 0;
+  }
+
+  /*
+   * コンテンツ（リード＋チップ）：幅・位置は JS（横 1〜7 列・縦は上端〜タイトル帯直上）。
+   * 見出し・キャッチ・ASMN とは独立。
+   */
+  .network-shell .network-content-column {
+    transform: none;
+    margin-inline: 0;
+    padding-inline: 0;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.75rem);
+    box-sizing: border-box;
+    overflow-x: visible;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .network-shell .network-content-column .network-intro {
+    font-size: clamp(0.58rem, 2.65vw, 0.66rem);
+    line-height: 1.48;
+    margin-bottom: clamp(0.35rem, 1.4vw, 0.5rem);
+  }
+
+  .network-shell .network-content-column .network-list-kicker {
+    margin-bottom: clamp(0.28rem, 1vw, 0.4rem);
+    font-size: clamp(0.5rem, 2.2vw, 0.56rem);
+  }
+
+  .network-shell .network-list {
+    display: none;
+  }
+
+  .network-shell .network-chip-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.45rem, 1.6vw, 0.62rem) clamp(0.38rem, 1.4vw, 0.52rem);
+    align-items: start;
+    padding-inline-start: 0;
+    /* 最下段チップ＋開いた詳細パネルが見切れないよう余白 */
+    padding-bottom: clamp(1.25rem, 5vh, 2.5rem);
+  }
+}
+
+.approach-chip-grid {
+  display: grid;
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+  grid-template-columns: 1fr;
+}
+
+/* 左レール／7マークとチップが干渉しないよう SP でもわずかに逃がす */
+@media (max-width: 768px) {
+  .approach-chip-grid {
+    padding-inline-start: clamp(0.35rem, 2.5vw, 1rem);
+  }
+}
+
+@media (min-width: 769px) {
+  .approach-chip-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.network-intro {
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.service-scroll-area {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scroll-behavior: smooth;
+  padding: 0;
+  scrollbar-width: thin;
+}
+
+/* ファーストビュー：見出しのみ（水平インセットは .section-shell） */
+.service-fv {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  min-height: 100svh;
+  padding-top: max(clamp(1.2rem, 2vw, 2rem), env(safe-area-inset-top, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+}
+
+@media (min-width: 769px) {
+  .service-body-stack {
+    --service-card-inline-inset: clamp(2rem, 4.5vw, 3.25rem);
+  }
+
+  .service-body-stack > .content-grid.service-cards-grid {
+    width: min(34rem, calc(100% - 2 * var(--service-card-inline-inset)));
+  }
+
+  /* PC: FV 内スロットは高さを取らない（ASM は十字基準で JS 配置） */
+  .service-fv .service-asmn-slot {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  .service-fv .service-asmn-slot .asm-cross-eyebrow {
+    pointer-events: auto;
+  }
+}
+
+.service-fv-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* Service FV：メッセージと同じ見出しブロックだが下詰め余白だけ抑える */
+.service-fv .message-titles-stack {
+  margin-bottom: 0;
+  min-height: clamp(4.5rem, 11vw, 7rem);
+  transform: translateY(-60px);
+}
+
+@media (min-width: 769px) {
+  /* グローバル -60px の後に置き、PC のみ 15px 上へ（SP ロックは維持） */
+  .service-fv .message-titles-stack {
+    transform: translateY(-75px);
+  }
+}
+
+/* SERVICE とキャッチ（4つの専門領域〜）の行間を少し詰める */
+.service-fv .message-titles-axis .message-heading {
+  margin-bottom: clamp(0.28rem, 1vw, 0.4rem);
+}
+
+.service-fv .message-titles-axis .message-tagline {
+  line-height: 1.16;
+}
+
+.service-body-stack {
+  padding-top: clamp(0.75rem, 3vw, 2rem);
+  /* カード列の左右インセット（画面端との余白＝カード幅を狭める） */
+  --service-card-inline-inset: clamp(1.35rem, 6.5vw, 3rem);
+}
+
+.service-body-stack > .content-grid.service-cards-grid {
+  box-sizing: border-box;
+  width: min(38rem, calc(100% - 2 * var(--service-card-inline-inset)));
+  max-width: none;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+/* CAPITAL 以下のカード一覧（FV 見出しは対象外） */
+.service-body-stack > .content-grid > .col-span-12 {
+  gap: clamp(0.75rem, 2vw, 1.1rem);
+}
+
+.service-body-stack .service-card {
+  border: 1px solid rgba(220, 226, 252, 0.14);
+  background: rgb(255 255 255 / 5%);
+  padding: clamp(0.7rem, 1.35vw, 1rem);
+  border-radius: 2px;
+  isolation: isolate;
+  backdrop-filter: blur(40px) saturate(1.12);
+  -webkit-backdrop-filter: blur(40px) saturate(1.12);
+}
+
+.service-body-stack .service-key {
+  font-size: clamp(0.52rem, 0.95vw, 0.58rem);
+  letter-spacing: 0.13em;
+  color: rgba(171, 226, 255, 0.86);
+  text-transform: uppercase;
+}
+
+.service-body-stack .service-headline {
+  margin-top: 0.38rem;
+  font-size: clamp(0.78rem, 1.35vw, 0.96rem);
+  font-weight: 600;
+  line-height: 1.4;
+  font-family: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+}
+
+.service-body-stack .service-tagline {
+  margin-top: 0.42rem;
+  font-size: clamp(0.72rem, 1.2vw, 0.86rem);
+  font-weight: 500;
+  line-height: 1.48;
+  color: rgba(230, 238, 255, 0.9);
+}
+
+.service-body-stack .service-body {
+  margin-top: 0.5rem;
+  font-size: clamp(0.68rem, 1.05vw, 0.76rem);
+  color: var(--text-secondary);
+  line-height: 1.64;
+}
+
+.service-body-stack .service-line-block {
+  margin-top: 0.75rem;
+}
+
+.service-body-stack .service-line-block:first-of-type {
+  margin-top: 0.8rem;
+}
+
+.service-body-stack .service-lines-label {
+  margin: 0 0 0.32rem;
+  font-size: clamp(0.52rem, 0.9vw, 0.56rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(171, 226, 255, 0.8);
+}
+
+.service-body-stack .service-lines {
+  margin: 0;
+  padding-left: 0.9rem;
+  color: var(--text-secondary);
+  font-size: clamp(0.66rem, 1vw, 0.72rem);
+  line-height: 1.58;
+}
+
+.service-body-stack .service-lines li {
+  margin-bottom: 0.22rem;
+}
+
+.service-body-stack .service-lines li::marker {
+  color: rgba(171, 226, 255, 0.48);
+}
+
+.service-body-stack .service-note {
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: clamp(0.6rem, 0.92vw, 0.66rem);
+  line-height: 1.58;
+  color: rgba(200, 210, 230, 0.65);
+}
+
+/*
+ * チップの枠線強調と詳細パネルを同一トークン（--approach-chip-accent）で同期。
+ * border-color と opacity を別 transition するとズレるため @property で補間する。
+ */
+@property --approach-chip-accent {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.approach-chip {
+  --approach-chip-reveal-duration: 0.18s;
+  --approach-chip-accent: 0;
+  position: relative;
+  z-index: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(100% - 10px);
+  max-width: calc(100% - 10px);
+  margin-inline: auto;
+  border: 1px solid rgba(220, 226, 252, 0.14);
+  padding: 1.05rem 1.1rem;
+  outline: none;
+  cursor: pointer;
+  transition:
+    --approach-chip-accent var(--approach-chip-reveal-duration) ease,
+    z-index 0s linear 0.25s;
+}
+
+/*
+ * Approach チップ: .reveal-item の侵入リビール（見出し・キャッチ同型）と
+ * accent 用 transition を併用（レイアウト不変・JSX の reveal-delay-4 のまま）。
+ */
+.approach-shell .approach-chip.reveal-item {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  backface-visibility: hidden;
+  transition:
+    opacity 0.52s ease,
+    transform 0.7s cubic-bezier(0.2, 0.65, 0.25, 1),
+    --approach-chip-accent var(--approach-chip-reveal-duration) ease,
+    z-index 0s linear 0.25s;
+}
+
+.section-frame.is-active .approach-shell .approach-chip.reveal-item {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.section-frame.is-active .approach-shell .approach-chip.reveal-delay-4.reveal-item {
+  /* 侵入リビール遅延は opacity / transform のみ（ホバー accent に 0.38s が残る不具合を防ぐ） */
+  transition-delay: 0.38s, 0.38s, 0s, 0s;
+}
+
+/* 強調枠線（ベース枠の上に accent の opacity で重ねる） */
+.approach-chip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: 1px solid rgba(200, 215, 252, 0.35);
+  opacity: var(--approach-chip-accent);
+  pointer-events: none;
+}
+
+/* チップ本体と詳細パネル間の隙間で :hover が切れるのを防ぐ */
+.approach-chip::after {
+  content: "";
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 0.45rem;
+  pointer-events: auto;
+}
+
+.approach-chip.is-open:not(.is-hover-dismissed)::after,
+.approach-chip:focus-visible:not(.is-hover-dismissed)::after {
+  display: block;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .approach-chip:hover:not(.is-hover-dismissed)::after {
+    display: block;
+  }
+}
+
+.approach-chip:focus-visible,
+.approach-chip.is-open {
+  --approach-chip-accent: 1;
+  z-index: 40;
+  isolation: isolate;
+  transition: --approach-chip-accent 0s, z-index 0s;
+  transition-delay: 0s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .approach-chip:hover:not(.is-hover-dismissed) {
+    --approach-chip-accent: 1;
+    z-index: 40;
+    isolation: isolate;
+    transition: --approach-chip-accent 0s, z-index 0s;
+    transition-delay: 0s;
+  }
+}
+
+/* タイトルタップ解除: ホバー中でも accent を詳細と同時に 0 へ */
+.approach-chip.is-hover-dismissed,
+.approach-chip.is-hover-dismissed:hover {
+  --approach-chip-accent: 0;
+  transition:
+    --approach-chip-accent var(--approach-chip-reveal-duration) ease,
+    z-index 0s linear 0.25s;
+}
+
+/*
+ * SP 縦1列のみ: 詳細パネル重なり時に下側チップのラベルを非表示。
+ * PC 3列では DOM 順の兄弟非表示が横並びを壊すため適用しない（Network 同型）。
+ */
+@media (max-width: 768px) and (hover: hover) and (pointer: fine) {
+  .approach-chip:hover:not(.is-hover-dismissed) ~ .approach-chip {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+.approach-chip:focus-visible {
+  box-shadow: 0 0 0 1px rgba(171, 226, 255, 0.35);
+}
+
+.approach-chip-head {
+  width: 100%;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.approach-chip-detail {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  bottom: auto;
+  margin: 0;
+  padding: 0.85rem 0.75rem;
+  border: 1px solid rgba(220, 226, 252, 0.16);
+  border-radius: 2px;
+  background: rgb(255 255 255 / 5%);
+  opacity: var(--approach-chip-accent);
+  pointer-events: none;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 35%);
+  backdrop-filter: blur(40px) saturate(1.12);
+  -webkit-backdrop-filter: blur(40px) saturate(1.12);
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.approach-chip-body {
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: min(42vh, 280px);
+  overflow-y: auto;
+  font-size: clamp(0.72rem, 2.65vw, 0.76rem);
+  font-weight: 400;
+  line-height: 1.62;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  text-align: justify;
+  text-align-last: left;
+  text-justify: inter-ideograph;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: manual;
+  color: rgba(228, 232, 250, 0.88);
+  scrollbar-width: thin;
+}
+
+.approach-chip-body :lang(en) {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  overflow-wrap: normal;
+}
+
+.approach-chip:focus-visible:not(.is-hover-dismissed) .approach-chip-detail,
+.approach-chip.is-open:not(.is-hover-dismissed) .approach-chip-detail {
+  pointer-events: auto;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .approach-chip:hover:not(.is-hover-dismissed) .approach-chip-detail {
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .approach-chip {
+    --approach-chip-reveal-duration: 0.15s;
+  }
+}
+
+/* Network SP のみ：Approach チップと同一インタラクション（PC には適用しない） */
+@media (max-width: 768px) {
+  .network-shell .network-chip {
+    --approach-chip-reveal-duration: 0.18s;
+    --approach-chip-accent: 0;
+    position: relative;
+    z-index: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+    border: 1px solid rgba(220, 226, 252, 0.14);
+    padding: clamp(0.55rem, 1.9vw, 0.72rem) clamp(0.48rem, 1.65vw, 0.62rem);
+    outline: none;
+    cursor: pointer;
+    transition:
+      --approach-chip-accent var(--approach-chip-reveal-duration) ease,
+      z-index 0s linear 0.25s;
+  }
+
+  .network-shell .network-chip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    border: 1px solid rgba(200, 215, 252, 0.35);
+    opacity: var(--approach-chip-accent);
+    pointer-events: none;
+  }
+
+  .network-shell .network-chip:focus-visible,
+  .network-shell .network-chip.is-open {
+    --approach-chip-accent: 1;
+    z-index: 40;
+    isolation: isolate;
+    transition: --approach-chip-accent 0s, z-index 0s;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .network-shell .network-chip:hover:not(.is-hover-dismissed) {
+      --approach-chip-accent: 1;
+      z-index: 40;
+      isolation: isolate;
+      transition: --approach-chip-accent 0s, z-index 0s;
+    }
+
+    /*
+     * 2列グリッドでは DOM 順の兄弟非表示がレイアウトを壊すため、Network では使わない。
+     */
+  }
+
+  .network-shell .network-chip.is-hover-dismissed,
+  .network-shell .network-chip.is-hover-dismissed:hover {
+    --approach-chip-accent: 0;
+    transition:
+      --approach-chip-accent var(--approach-chip-reveal-duration) ease,
+      z-index 0s linear 0.25s;
+  }
+
+  .network-shell .network-chip:focus-visible {
+    box-shadow: 0 0 0 1px rgba(171, 226, 255, 0.35);
+  }
+
+  .network-shell .network-chip-head {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+    color: rgba(236, 238, 251, 0.92);
+    font-family: var(--font-noto-sans-jp), sans-serif;
+    font-size: clamp(0.52rem, 2.3vw, 0.62rem);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    line-height: 1.28;
+    text-transform: none;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+
+  .network-shell .network-chip-detail {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    right: 0;
+    top: calc(100% + 0.45rem);
+    bottom: auto;
+    margin: 0;
+    padding: 0.85rem 0.75rem;
+    border: 1px solid rgba(220, 226, 252, 0.16);
+    border-radius: 2px;
+    background: rgb(255 255 255 / 5%);
+    opacity: var(--approach-chip-accent);
+    pointer-events: none;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 35%);
+    backdrop-filter: blur(40px) saturate(1.12);
+    -webkit-backdrop-filter: blur(40px) saturate(1.12);
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .network-shell .network-chip-body {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(28vh, 160px);
+    overflow-y: auto;
+    font-family: var(--font-noto-sans-jp), sans-serif;
+    font-size: clamp(0.58rem, 2.45vw, 0.68rem);
+    font-weight: 400;
+    line-height: 1.48;
+    letter-spacing: 0.02em;
+    text-align: left;
+    color: rgba(210, 218, 242, 0.88);
+    scrollbar-width: thin;
+  }
+
+  .network-shell .network-chip:focus-visible:not(.is-hover-dismissed) .network-chip-detail,
+  .network-shell .network-chip.is-open:not(.is-hover-dismissed) .network-chip-detail {
+    pointer-events: auto;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .network-shell .network-chip:hover:not(.is-hover-dismissed) .network-chip-detail {
+      pointer-events: auto;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .network-shell .network-chip {
+    --approach-chip-reveal-duration: 0.15s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .network-list-detail {
+    transition: opacity 0.2s ease;
+    transform: none;
+  }
+
+  .network-list-row:hover .network-list-detail,
+  .network-list-row:focus-visible .network-list-detail {
+    transform: none;
+  }
+}
+
+.contact-link {
+  border-bottom: 1px solid rgba(213, 216, 254, 0.72);
+  font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+  letter-spacing: 0.03em;
+}
+
+/* 縦レンジを .cross-plane（grid-overlay）と同一にし、左端7マークとドットを揃える */
+.section-dots {
+  position: fixed;
+  left: 0;
+  top: var(--cross-inset);
+  bottom: var(--cross-inset);
+  /* グリッド左端（cross-inset）より 3px 手前でレールを終える */
+  width: calc(var(--cross-inset) - var(--menu-rail-gap-from-grid));
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* 見た目は 1px の線のまま、パディング＋負マージンでホバー／タップ領域だけ拡大 */
+.left-rail-dot {
+  position: relative;
+  flex-shrink: 0;
+  pointer-events: auto;
+  width: 14px;
+  height: 1px;
+  padding: 14px 16px;
+  margin: -14px -16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: opacity 0.35s ease;
+  opacity: 0.7;
+}
+
+.left-rail-dot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 1px;
+  transform: translate(-50%, -50%);
+  background: rgba(225, 229, 255, 0.54);
+  transition:
+    width 0.35s ease,
+    background-color 0.35s ease,
+    opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.left-rail-dot:hover,
+.left-rail-dot:focus-visible {
+  opacity: 1;
+}
+
+.left-rail-dot:hover::after,
+.left-rail-dot:focus-visible::after {
+  background: rgba(240, 243, 255, 0.88);
+}
+
+.left-rail-dot.is-active {
+  opacity: 1;
+}
+
+.left-rail-dot.is-active::after {
+  width: 22px;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.left-rail-dot:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
+/* flow: max-width 768px — SP 共通（パディング・Hero・Company・Contact 等） */
+@media (max-width: 768px) {
+  /* GridOverlay .cross-plane とセクション座標の inset を一致させる */
+  :root {
+    --cross-inset: 20px;
+  }
+
+  .section-shell {
+    --section-inline-pad: 1rem;
+    --cross-inset: 20px;
+    padding-inline: var(--section-inline-pad);
+  }
+
+  .section-shell--hero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: var(--app-viewport-h, 100dvh);
+    padding-left: max(var(--section-inline-pad), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--section-inline-pad), env(safe-area-inset-right, 0px));
+    padding-top: max(
+      calc(env(safe-area-inset-top, 0px) + 2.65rem),
+      clamp(3.35rem, 10.5vh, 4.1rem)
+    );
+    padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
+    --hero-copy-inline-inset-left: 0;
+    --hero-copy-inline-inset-right: 0;
+    /* 交差点 1/2 基準：ASM 左端＝英語キャッチ左端（HeroSection で実測同期） */
+    --asmn-cross-offset-x: var(--hero-en-cross-offset-x);
+    --asmn-cross-offset-y: 56px;
+    --hero-en-from-axis-offset-x: 15px;
+    --hero-en-cross-offset-x: 15px;
+    --hero-en-cross-offset-y: -22px;
+    /* 日本語ブロックを下端から持ち上げる（padding では効かない） */
+    --hero-jp-lift: 20px;
+  }
+
+  .site-header {
+    top: max(env(safe-area-inset-top, 0px), clamp(8px, 1.2vh, 12px));
+    padding-left: calc(max(var(--section-inline-pad), env(safe-area-inset-left, 0px)) - 3px);
+    padding-right: max(var(--section-inline-pad), env(safe-area-inset-right, 0px));
+  }
+
+  /* ロゴ共通位置: PC は translate(6px, -10px) のまま、SP のみ 6px 上へ */
+  .site-header__brand {
+    transform: translate(6px, -16px);
+  }
+
+  .hero-grid {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    grid-template-rows: none;
+    min-height: auto;
+    gap: 0;
+    align-content: stretch;
+    padding-top: 0;
+  }
+
+  .hero-grid > * {
+    grid-column: 1 / -1;
+  }
+
+  .hero-meta {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    flex: none;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .hero-meta .hero-brand--layout-anchor {
+    display: none;
+  }
+
+  .section-shell--hero .asm-cross-eyebrow-slot {
+    padding-inline-start: 0;
+    min-height: 0;
+  }
+
+  .section-shell--hero .asm-cross-eyebrow {
+    pointer-events: auto;
+  }
+
+  .hero-copy-rail {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    flex: none;
+    display: block;
+    pointer-events: none;
+  }
+
+  .hero-copy-group {
+    position: absolute;
+    top: var(--hero-copy-flow-top, 38%);
+    left: var(--hero-copy-aligned-left, 0);
+    right: max(var(--section-inline-pad), env(safe-area-inset-right, 0px));
+    width: auto;
+    max-width: min(17.5rem, calc(100% - var(--hero-copy-aligned-left, 0px) - 0.75rem));
+    transform: none;
+    padding-inline: 0;
+    pointer-events: auto;
+  }
+
+  .hero-flow-break {
+    display: block;
+  }
+
+  .hero-title {
+    white-space: nowrap;
+    font-size: clamp(1.28rem, 5.4vw, 1.52rem);
+    line-height: 1.1;
+    letter-spacing: -0.016em;
+    padding-block: 0.02em 0.08em;
+    max-width: 100%;
+  }
+
+  .hero-subtitle {
+    font-size: clamp(0.76rem, 3.25vw, 0.88rem);
+    line-height: 1.46;
+    max-width: 100%;
+    margin-top: clamp(0.45rem, 2vw, 0.65rem);
+  }
+
+  .hero-support {
+    font-size: clamp(0.62rem, 2.75vw, 0.72rem);
+    line-height: 1.58;
+    max-width: 100%;
+    margin-top: clamp(0.4rem, 1.8vw, 0.58rem);
+  }
+
+  .section-shell--hero .hero-jp-wrap {
+    grid-row: auto;
+    flex: 0 0 auto;
+    margin-top: auto;
+    margin-bottom: var(--hero-jp-lift, 0px);
+    justify-self: stretch;
+    align-self: end;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    text-align: left;
+    /* 英語 .hero-copy-group 左端に実測で揃える（--hero-jp-aligned-left は HeroSection） */
+    padding-left: var(--hero-jp-aligned-left, 0);
+    padding-right: max(var(--section-inline-pad), env(safe-area-inset-right, 0px));
+    padding-top: clamp(1.1rem, 4.25vh, 1.85rem);
+    padding-bottom: max(
+      0.55rem,
+      calc(env(safe-area-inset-bottom, 0px) + 0.35rem)
+    );
+    overflow-wrap: break-word;
+  }
+
+  .section-shell--hero .hero-jp-title,
+  .section-shell--hero .hero-jp-body {
+    max-width: min(17.5rem, calc(100% - 0.5rem));
+  }
+
+  .section-shell--hero .hero-jp-title {
+    font-size: clamp(0.82rem, 3.55vw, 0.96rem);
+    line-height: 1.44;
+    letter-spacing: 0.005em;
+  }
+
+  .section-shell--hero .hero-jp-body {
+    font-size: clamp(0.64rem, 2.85vw, 0.74rem);
+    line-height: 1.54;
+    margin-top: clamp(0.45rem, 2vw, 0.6rem);
+    transform: translateY(-5px);
+  }
+
+  .section-dots {
+    left: 0.6rem;
+    width: calc(var(--cross-inset) - var(--menu-rail-gap-from-grid) - 0.6rem);
+  }
+
+  .left-rail-dot {
+    padding: 18px 20px;
+    margin: -18px -20px;
+  }
+
+  .left-rail-dot::after {
+    width: 16px;
+  }
+
+  .left-rail-dot.is-active::after {
+    width: 24px;
+  }
+
+  /*
+   * Company SP: PC と同型レイアウト。罫線・表は GridOverlay flow（8 列・左 7 行＋）に合わせる。
+   * 横位置は PC と同じく padding ボックス原点 + cross-inset + col/grid（pad は引かない）。
+   */
+  .section-shell.company-shell {
+    /* 実機 Safari: dvw と overlay の % 基準幅の差で横ズレすることがある */
+    --company-plane-w: calc(100vw - 2 * var(--cross-inset));
+    --company-grid-cols: 8;
+    --company-label-span: 2;
+    /* ASMN のみ上へ（見出し・キャッチの top は変更しない） */
+    --company-asmn-lift: 43px;
+    --company-asmn-sp-offset-down: 10px;
+    --company-label-pad-inline-start: clamp(0.36rem, 1.35vw, 0.5rem);
+  }
+
+  .section-shell.company-shell .company-table-line-v {
+    left: calc(
+      ((var(--line-col) - var(--company-table-col-start)) / var(--company-grid-cols)) *
+        var(--company-plane-w)
+    );
+  }
+
+  .company-shell .company-table-row {
+    grid-template-columns: calc(
+        var(--company-label-span) * var(--company-plane-w) / var(--company-grid-cols)
+      )
+      minmax(0, 1fr);
+  }
+
+  .company-shell .company-table-label,
+  .company-shell .company-table-value {
+    font-size: clamp(0.58rem, 2.35vw, 0.68rem);
+    line-height: 1.42;
+  }
+
+  .company-shell .company-table-label {
+    padding: 0 clamp(0.44rem, 1.45vw, 0.58rem) 0 var(--company-label-pad-inline-start);
+  }
+
+  .company-shell .company-table-value {
+    padding-inline: clamp(0.44rem, 1.45vw, 0.58rem);
+    line-height: 1.48;
+  }
+
+  /*
+   * ASMN・見出し・キャッチ：タイポのみ他セクション共通クラスに合わせる（位置は変更しない）。
+   * .message-heading は共通定義のまま。キャッチは PC 用 .company-shell 上書きを SP で差し替え。
+   */
+  .company-shell .message-titles-axis .message-tagline {
+    font-size: clamp(0.95rem, 2.05vw, 1.5rem);
+    line-height: 1.22;
+    white-space: nowrap;
+  }
+
+  .company-shell .message-titles-stack .company-asmn-slot .asm-cross-eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    top: calc(
+      0px - var(--company-asmn-lift, 43px) + var(--company-asmn-sp-offset-down, 10px)
+    ) !important;
+  }
+
+  .section-frame.is-active:has(.company-shell) {
+    overflow: visible;
+  }
+
+  .section-frame.is-active > .company-shell {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /*
+   * position:relative を付けない（PC と同様 section-shell が containing block）。
+   * stack に relative + 実質高さ 0 だと absolute の top が中央付近から計算され、表が下に寄る。
+   */
+  .section-frame.is-active > .company-shell > .company-stack {
+    position: static;
+    flex: 1 1 auto;
+    align-self: stretch;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .company-shell .message-titles-stack .company-asmn-slot .asm-cross-eyebrow {
+    max-width: min(46vw, 11rem);
+  }
+
+  /*
+   * Company SP: タイトル帯（ASMN・見出し・キャッチ）— Network 同型の同時リビール。
+   * 位置は PC 同型の CSS（--company-asmn-left）。表・罫線は従来タイミングのまま。
+   */
+  .company-shell .reveal-item.company-unified-asmn,
+  .company-shell .reveal-item.company-title-unified {
+    transition: none !important;
+  }
+
+  .company-shell:not(.company-entry-ready) .reveal-item.company-unified-asmn,
+  .company-shell:not(.company-entry-ready) .reveal-item.company-title-unified {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.company-shell:not(.company-entry-ready)
+    .reveal-item.company-unified-asmn,
+  .section-frame.is-active
+    .section-shell.company-shell:not(.company-entry-ready)
+    .reveal-item.company-title-unified,
+  .section-frame.is-active
+    .section-shell.company-shell:not(.company-entry-ready)
+    .reveal-item.asm-cross-eyebrow.company-unified-asmn {
+    animation: none !important;
+    transition: none !important;
+    opacity: 0 !important;
+    transform: none !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.company-shell.company-entry-ready
+    .reveal-item.company-unified-asmn:not(.hero-bilingual-reveal):not(.company-titles-revealed),
+  .section-frame.is-active
+    .section-shell.company-shell.company-entry-ready
+    .reveal-item.company-title-unified:not(.company-titles-revealed) {
+    visibility: visible;
+    opacity: 0;
+    transform: none !important;
+    transition: none !important;
+    animation: company-titles-unified-reveal 0.7s cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: 0s !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.company-shell.company-entry-ready
+    .reveal-item.company-unified-asmn.company-titles-revealed,
+  .section-frame.is-active
+    .section-shell.company-shell.company-entry-ready
+    .reveal-item.company-title-unified.company-titles-revealed {
+    visibility: visible;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* 表リビール（--company-text-reveal-base）後もタイトル帯の transform を維持 */
+  .section-frame.is-active
+    .section-shell.company-shell.company-entry-ready
+    .message-titles-stack
+    .reveal-item.company-unified-asmn.company-titles-revealed,
+  .section-frame.is-active
+    .section-shell.company-shell.company-entry-ready
+    .message-titles-stack
+    .reveal-item.company-title-unified.company-titles-revealed {
+    animation: none !important;
+  }
+
+  /*
+   * タイトル帯完了後に表本文をリビール（is-active から 1200ms の一括開始だと約1秒後にガクつく）
+   */
+  .section-frame.is-active
+    .section-shell.company-shell:not(.company-entry-ready)
+    .company-table-label,
+  .section-frame.is-active
+    .section-shell.company-shell:not(.company-entry-ready)
+    .company-table-value {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  /* タイトル帯リビール（0.7s）後に表本文（entry-ready 起点・タイトル帯とは独立） */
+  .section-frame.is-active
+    .section-shell.company-shell.company-entry-ready
+    .company-table-label,
+  .section-frame.is-active
+    .section-shell.company-shell.company-entry-ready
+    .company-table-value {
+    animation: company-text-reveal 0.48s cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: calc(
+      0.75s + var(--row-index, 0) * var(--company-text-row-stagger)
+    ) !important;
+  }
+
+  /*
+   * Contact SP: Company と同型（absolute フォーム・罫線・8 列グリッドで＋交差に合わせる）。
+   * PC（769px 以上）のベーススタイルは変更しない。
+   */
+  .section-shell.contact-shell {
+    --contact-plane-w: calc(100vw - 2 * var(--cross-inset));
+    --contact-grid-cols: 8;
+    --contact-label-span: 2;
+    /* Company 確定値に合わせる（見出し・キャッチは変更しない） */
+    --contact-asmn-lift: 43px;
+    --contact-asmn-sp-offset-down: 10px;
+    --contact-field-font-size: clamp(0.58rem, 2.35vw, 0.68rem);
+    --contact-field-pad-inline-end: clamp(0.44rem, 1.45vw, 0.58rem);
+    --contact-form-left: calc(
+      var(--cross-inset) + (var(--contact-form-col-start) / var(--contact-grid-cols)) *
+        var(--contact-plane-w)
+    );
+    --contact-form-origin-x: var(--contact-form-left);
+    --contact-title-pad-inline-start: clamp(0.36rem, 1.35vw, 0.5rem);
+    --contact-label-pad-inline-start: clamp(0.36rem, 1.35vw, 0.5rem);
+  }
+
+  .section-frame.is-active:has(.contact-shell) {
+    overflow: visible;
+  }
+
+  .section-frame.is-active > .contact-shell {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .section-frame.is-active > .contact-shell > .contact-stack {
+    position: static;
+    flex: 1 1 auto;
+    align-self: stretch;
+    width: 100%;
+    min-height: 0;
+  }
+
+  /*
+   * キーボード表示中のみ Contact セクション内をスクロール（寸法トークンは固定のまま）。
+   * 問い合わせ欄・Send まで届かせるため stack の高さはフォーム全体分を確保する。
+   */
+  .section-frame.is-active > .contact-shell.contact-shell--keyboard-scroll {
+    height: var(--contact-keyboard-viewport-h);
+    max-height: var(--contact-keyboard-viewport-h);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  .section-frame.is-active > .contact-shell.contact-shell--keyboard-scroll > .contact-stack {
+    min-height: calc(var(--cross-inset) + var(--contact-plane-h));
+  }
+
+  .section-shell.contact-shell .contact-form-wrap {
+    position: absolute;
+    box-sizing: border-box;
+    z-index: 4;
+    margin: 0;
+    height: calc(6 * var(--contact-row-h));
+    top: calc(
+      var(--cross-inset) + ((var(--contact-form-row-start) - 1) / var(--contact-focus-row-intervals)) *
+        var(--contact-plane-h)
+    );
+    left: var(--contact-form-left);
+    width: calc(
+      ((var(--contact-form-col-end) - var(--contact-form-col-start)) / var(--contact-grid-cols)) *
+        var(--contact-plane-w)
+    );
+  }
+
+  .section-shell.contact-shell .contact-form-line-v {
+    left: calc(
+      ((var(--line-col) - var(--contact-form-col-start)) / var(--contact-grid-cols)) *
+        var(--contact-plane-w)
+    );
+  }
+
+  .contact-form-row {
+    grid-template-columns: calc(
+        var(--contact-label-span) * var(--contact-plane-w) / var(--contact-grid-cols)
+      )
+      minmax(0, 1fr);
+    height: var(--contact-row-h);
+    min-height: var(--contact-row-h);
+    max-height: var(--contact-row-h);
+    border-bottom: none;
+  }
+
+  .contact-form-row--double {
+    height: calc(2 * var(--contact-row-h));
+    min-height: calc(2 * var(--contact-row-h));
+    max-height: calc(2 * var(--contact-row-h));
+  }
+
+  .contact-form {
+    height: calc(var(--contact-form-field-units) * var(--contact-row-h));
+    border: none;
+  }
+
+  .contact-form-intro {
+    border: none;
+  }
+
+  .contact-form-row--intro .contact-form-label {
+    display: flex;
+  }
+
+  .contact-form-label {
+    padding: 0 var(--contact-field-pad-inline-end) 0 var(--contact-label-pad-inline-start);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: var(--contact-field-font-size);
+    font-weight: var(--contact-field-font-weight);
+    line-height: var(--contact-field-line-height);
+    letter-spacing: var(--contact-field-letter-spacing);
+    color: var(--contact-field-muted-color);
+  }
+
+  .contact-form-intro-text {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 clamp(0.44rem, 1.45vw, 0.58rem);
+    font-size: clamp(0.58rem, 2.35vw, 0.68rem);
+    line-height: 1.48;
+  }
+
+  .contact-form-wrap input.contact-form-control {
+    height: 100%;
+    padding: 0 var(--contact-field-pad-inline-end);
+    font-size: var(--contact-field-font-size);
+    font-weight: var(--contact-field-font-weight);
+    line-height: var(--contact-field-line-height);
+    letter-spacing: var(--contact-field-letter-spacing);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  .contact-form-wrap .contact-form-control--textarea {
+    height: 100%;
+    max-height: 100%;
+    padding-inline: var(--contact-field-pad-inline-end);
+    font-size: var(--contact-field-font-size);
+    font-weight: var(--contact-field-font-weight);
+    line-height: var(--contact-field-line-height);
+    letter-spacing: var(--contact-field-letter-spacing);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  .contact-form-message-grid {
+    grid-template-columns: calc(
+        var(--contact-label-span) * var(--contact-plane-w) / var(--contact-grid-cols)
+      )
+      minmax(0, 1fr);
+    grid-template-rows: 1fr var(--contact-row-h);
+    height: calc(2 * var(--contact-row-h));
+    min-height: calc(2 * var(--contact-row-h));
+  }
+
+  .contact-form-message-grid .contact-form-label {
+    padding: 0 var(--contact-field-pad-inline-end) 0 var(--contact-label-pad-inline-start);
+    padding-bottom: var(--contact-row-h);
+    display: flex;
+    align-items: center;
+    font-size: var(--contact-field-font-size);
+  }
+
+  .contact-form-textarea-slot {
+    grid-row: 1;
+    align-items: stretch;
+    align-self: stretch;
+    height: 100%;
+    min-height: 0;
+    padding-block: var(--contact-textarea-slot-pad-block);
+    padding-inline: 0;
+  }
+
+  .contact-form-message-grid .contact-form-control--textarea {
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    align-self: stretch;
+  }
+
+  .contact-form-terms {
+    height: var(--contact-row-h);
+    min-height: var(--contact-row-h);
+    padding: 0 clamp(0.44rem, 1.45vw, 0.58rem) 0 var(--contact-label-pad-inline-start);
+    font-size: clamp(0.5rem, 2.2vw, 0.56rem);
+  }
+
+  .contact-form-actions.contact-form-send-cell {
+    height: var(--contact-row-h);
+    min-height: var(--contact-row-h);
+    padding: 0 clamp(0.44rem, 1.45vw, 0.58rem);
+  }
+
+  .contact-shell .message-titles-axis .message-tagline {
+    font-size: clamp(0.95rem, 2.05vw, 1.5rem);
+    line-height: 1.22;
+    white-space: nowrap;
+  }
+
+  .contact-shell .message-titles-stack .contact-asmn-slot .asm-cross-eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    max-width: min(46vw, 11rem);
+    top: calc(
+      0px - var(--contact-asmn-lift, 43px) + var(--contact-asmn-sp-offset-down, 10px)
+    ) !important;
+  }
+
+  /*
+   * Contact SP: タイトル帯（ASMN・見出し・キャッチ）— Company 同型の同時リビール。
+   * 位置は PC 同型の CSS（--contact-asmn-left）。フォーム・罫線は従来タイミングのまま。
+   */
+  .contact-shell .reveal-item.contact-unified-asmn,
+  .contact-shell .reveal-item.contact-title-unified {
+    transition: none !important;
+  }
+
+  .contact-shell:not(.contact-entry-ready) .reveal-item.contact-unified-asmn,
+  .contact-shell:not(.contact-entry-ready) .reveal-item.contact-title-unified {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.contact-shell:not(.contact-entry-ready)
+    .reveal-item.contact-unified-asmn,
+  .section-frame.is-active
+    .section-shell.contact-shell:not(.contact-entry-ready)
+    .reveal-item.contact-title-unified,
+  .section-frame.is-active
+    .section-shell.contact-shell:not(.contact-entry-ready)
+    .reveal-item.asm-cross-eyebrow.contact-unified-asmn {
+    animation: none !important;
+    transition: none !important;
+    opacity: 0 !important;
+    transform: none !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .reveal-item.contact-unified-asmn:not(.hero-bilingual-reveal):not(.contact-titles-revealed),
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .reveal-item.contact-title-unified:not(.contact-titles-revealed) {
+    visibility: visible;
+    opacity: 0;
+    transform: none !important;
+    transition: none !important;
+    animation: contact-titles-unified-reveal 0.7s cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: 0s !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .reveal-item.contact-unified-asmn.contact-titles-revealed,
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .reveal-item.contact-title-unified.contact-titles-revealed {
+    visibility: visible;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .message-titles-stack
+    .reveal-item.contact-unified-asmn.contact-titles-revealed,
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .message-titles-stack
+    .reveal-item.contact-title-unified.contact-titles-revealed {
+    animation: none !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.contact-shell:not(.contact-entry-ready)
+    .contact-form-label,
+  .section-frame.is-active
+    .section-shell.contact-shell:not(.contact-entry-ready)
+    .contact-form-intro-text,
+  .section-frame.is-active
+    .section-shell.contact-shell:not(.contact-entry-ready)
+    .contact-form-terms,
+  .section-frame.is-active
+    .section-shell.contact-shell:not(.contact-entry-ready)
+    .contact-form-send-label,
+  .section-frame.is-active
+    .section-shell.contact-shell:not(.contact-entry-ready)
+    .contact-form-placeholder {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .contact-form-label,
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .contact-form-intro-text,
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .contact-form-terms,
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .contact-form-send-label,
+  .section-frame.is-active
+    .section-shell.contact-shell.contact-entry-ready
+    .contact-form-placeholder {
+    animation: company-text-reveal 0.48s cubic-bezier(0.2, 0.65, 0.25, 1) forwards !important;
+    animation-delay: calc(
+      0.75s + var(--row-index, 0) * var(--contact-text-row-stagger)
+    ) !important;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-grain-bg__blob,
+  .paper-grain-bg--css::before,
+  .paper-grain-bg--css::after {
+    animation: none;
+    opacity: 0.9;
+  }
+
+  .section-track {
+    transition-duration: 0.01ms;
+  }
+
+  .section-track.is-transitioning > .section-frame.is-slide-source {
+    transition-duration: 0.01ms;
+  }
+
+  .reveal-item.asm-cross-eyebrow {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+
+  .section-frame.is-active
+    .section-shell--message
+    .asm-cross-eyebrow.hero-bilingual-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .section-shell--hero .hero-bilingual-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    animation: none;
+  }
+
+
+  .section-shell.company-shell .company-table-line-h,
+  .section-shell.company-shell .company-table-line-v {
+    transform: none;
+  }
+
+  .section-frame.is-active .section-shell.company-shell .company-table-line-h,
+  .section-frame.is-active .section-shell.company-shell .company-table-line-v {
+    animation: none;
+  }
+
+  .section-shell.company-shell .reveal-item,
+  .section-shell.company-shell .company-table-label,
+  .section-shell.company-shell .company-table-value {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+
+  .section-shell.contact-shell .contact-form-line-h,
+  .section-shell.contact-shell .contact-form-line-v {
+    transform: none;
+  }
+
+  .section-frame.is-active .section-shell.contact-shell .contact-form-line-h,
+  .section-frame.is-active .section-shell.contact-shell .contact-form-line-v {
+    animation: none;
+  }
+
+  .section-shell.contact-shell .reveal-item,
+  .section-shell.contact-shell .contact-form-label,
+  .section-shell.contact-shell .contact-form-intro-text,
+  .section-shell.contact-shell .contact-form-terms,
+  .section-shell.contact-shell .contact-form-send-label,
+  .section-shell.contact-shell .contact-form-placeholder {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+
+  .section-shell.contact-shell .contact-form-control {
+    opacity: 1;
+    transform: none;
+  }
+
+  .contact-form-terms {
+    color: rgba(236, 238, 251, 0.92);
+    transition: none;
+  }
+
+  .contact-form-send-cell::before {
+    transition: none;
+  }
+
+  .contact-form-send-cell:hover::before,
+  .contact-form-send-cell:focus-visible::before {
+    opacity: 0.15;
+  }
 }
