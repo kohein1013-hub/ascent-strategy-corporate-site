@@ -266,14 +266,14 @@ export function HeroSection({
                 The Strategy to Ascend.
               </h1>
               <p className="hero-subtitle">
-                Financial strategy for every stage
+                Financial strategy for every stage{" "}
                 <br className="hero-flow-break" />
                 of corporate growth.
               </p>
               <p className="hero-support">
-                Ascent strategy is a financial consulting firm
+                Ascent strategy is a financial consulting firm{" "}
                 <br className="hero-flow-break" />
-                specializing in four core pillars:
+                specializing in four core pillars:{" "}
                 <br className="hero-flow-break" />
                 fundraising, institutional programs, M&amp;A, and sales support.
               </p>
