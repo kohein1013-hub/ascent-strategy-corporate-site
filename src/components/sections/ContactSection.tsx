@@ -2,7 +2,6 @@
 
 import { type CSSProperties, useLayoutEffect, useRef } from "react";
 
-import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 import { mediaQueries } from "@/lib/breakpoints";
 import {
   freezeAppViewportForSection,
@@ -245,14 +244,6 @@ export function ContactSection({
     >
       <div className="contact-stack">
         <div className="message-titles-stack">
-          <div className="asm-cross-eyebrow-slot contact-asmn-slot">
-            <AsmCrossEyebrow
-              activeIndex={activeIndex}
-              className="reveal-item reveal-delay-1 contact-unified-asmn"
-            >
-              ASMN 006.
-            </AsmCrossEyebrow>
-          </div>
           <div className="message-titles-axis">
             <h2 className="message-heading reveal-item reveal-delay-2 contact-title-unified">
               Contact

@@ -9,7 +9,6 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 import { mediaQueries } from "@/lib/breakpoints";
 import {
   FLOW_MARK_COLS,
@@ -369,7 +368,7 @@ export function NetworkSection({ activeIndex = 0 }: { activeIndex?: number }) {
 
       syncContentBounds(true);
 
-      /* 計測用フラグ → AsmCrossEyebrow で幅を取ってから座標確定（Approach 同型） */
+      /* 計��用フラグ → AsmCrossEyebrow で幅を取ってから座標確定（Approach 同型） */
       shell.dataset.networkAsmFinalize = "1";
       notifyTitlesLayout(true);
       delete shell.dataset.networkAsmFinalize;
@@ -600,18 +599,6 @@ export function NetworkSection({ activeIndex = 0 }: { activeIndex?: number }) {
     <section ref={shellRef} className="section-shell network-shell">
       <div className="network-stack">
         <div className="message-titles-stack">
-          <div className="asm-cross-eyebrow-slot network-asmn-slot col-span-12 md:col-span-3 md:col-start-1 md:row-start-1">
-            <AsmCrossEyebrow
-              activeIndex={activeIndex}
-              className={
-                isPcGrid
-                  ? "reveal-item hero-bilingual-reveal"
-                  : "reveal-item network-unified-asmn"
-              }
-            >
-              ASMN 004.
-            </AsmCrossEyebrow>
-          </div>
           <div className="message-titles-axis">
             <div className="network-heading-axis">
               <h2 className="message-heading reveal-item reveal-delay-2">Network</h2>

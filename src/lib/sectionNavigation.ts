@@ -20,6 +20,31 @@ export const SECTION_INDEX: Record<SectionId, number> = sectionIds.reduce(
   {} as Record<SectionId, number>,
 );
 
+/** ヘッダーの ASMN メニューに表示するセクション名（英語ラベル） */
+export const SECTION_LABELS: Record<SectionId, string> = {
+  top: "TOP",
+  message: "MESSAGE",
+  service: "SERVICE",
+  approach: "APPROACH",
+  network: "NETWORK",
+  company: "COMPANY",
+  contact: "CONTACT",
+};
+
+/** ASMN 番号（000 始まり、3 桁ゼロ埋め）を返す。Hero=000 → Contact=006 */
+export function formatAsmnNumber(index: number): string {
+  const normalized = ((index % sectionIds.length) + sectionIds.length) % sectionIds.length;
+  return String(normalized).padStart(3, "0");
+}
+
+/** ヘッダーメニュー項目（番号 + セクション名） */
+export const SECTION_MENU_ITEMS = sectionIds.map((id, index) => ({
+  id,
+  index,
+  number: formatAsmnNumber(index),
+  label: SECTION_LABELS[id],
+}));
+
 /** スライド中の二重起動防止（SP 0.72s / PC 1.02s より短く、端スクロール後の待ちを減らす） */
 export const navigationCooldownMs = 760;
 /** メッセージ→サービス直後、トラックパッド慣性が内部スクロールに乗らないようにする時間 */

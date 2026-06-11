@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 
-import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 import { mediaQueries } from "@/lib/breakpoints";
 import {
   APPROACH_CROSS_FOCUS,
@@ -192,7 +191,7 @@ export function ApproachSection({ activeIndex = 0 }: { activeIndex?: number }) {
         body?.style.removeProperty("margin-top");
         return;
       }
-      /* 非表示フレームは reveal 未適用で計測が狂うため、表示中のみ同期 */
+      /* 非表示フレームは reveal 未��用で計測が狂うため、表示中のみ同期 */
       if (!frame?.classList.contains("is-active")) return;
       /* チップ侵入リビール中は margin を固定（transform 計測ずれによるガタつき防止） */
       if (!force && Date.now() < chipLayoutLockUntil) return;
@@ -450,14 +449,6 @@ export function ApproachSection({ activeIndex = 0 }: { activeIndex?: number }) {
   return (
     <section ref={shellRef} className="section-shell approach-shell">
       <div className="message-titles-stack">
-        <div className="asm-cross-eyebrow-slot approach-asmn-slot col-span-12 md:col-span-3 md:row-start-1">
-          <AsmCrossEyebrow
-            activeIndex={activeIndex}
-            className="reveal-item hero-bilingual-reveal"
-          >
-            ASMN 003.
-          </AsmCrossEyebrow>
-        </div>
         <div className="message-titles-axis">
           <div className="approach-heading-axis">
             <h2 className="message-heading reveal-item reveal-delay-2">

@@ -15,6 +15,8 @@ import {
   navigationCooldownMs,
   sectionIds,
   SECTION_INDEX,
+  SECTION_MENU_ITEMS,
+  formatAsmnNumber,
   SERVICE_MOMENTUM_GUARD_MS,
   touchThreshold,
   touchThresholdAtScrollEdge,
@@ -53,6 +55,8 @@ type Props = {
 export function SectionNavigator({ onActiveIndexChange }: Props) {
   const [virtualIndex, setVirtualIndex] = useState(1);
   const virtualIndexRef = useRef(1);
+  /** ヘッダー右の ASMN メニュー開閉 */
+  const [menuOpen, setMenuOpen] = useState(false);
   /** 縦スライド中は virtual の先、完了後に追従（SP チラつき防止） */
   const [committedTrackIndex, setCommittedTrackIndex] = useState(1);
   const committedTrackIndexRef = useRef(1);
@@ -761,6 +765,38 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
     scheduleSlideEndFallback();
   }, [beginSectionSlide, scheduleSlideEndFallback]);
 
+  /** 任意セクション（実 index 0〜6）へ絶対ジャンプ（ヘッダーの ASMN メニュー用） */
+  const goToIndex = useCallback(
+    (index: number) => {
+      setTransitionEnabled(true);
+      const targetTrackIndex = index + 1;
+      beginSectionSlide(targetTrackIndex);
+      freezeAppViewportHeight(SECTION_ENTRY_VIEWPORT_FREEZE_MS);
+      setVirtualIndex(targetTrackIndex);
+      scheduleSlideEndFallback();
+    },
+    [beginSectionSlide, scheduleSlideEndFallback],
+  );
+
+  /** ASMN メニュー：Esc キーと外クリックで閉じる */
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(".asmn-menu")) return;
+      setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [menuOpen]);
+
   const trackOffsetY =
     pinnedTrackOffsetY ??
     (viewportHeight > 0 ? -virtualIndex * viewportHeight : undefined);
@@ -777,6 +813,46 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
           Ascent strategy
         </button>
       </header>
+      <div className={`asmn-menu ${menuOpen ? "is-open" : ""}`}>
+        <div className="asmn-menu__bar">
+          <button
+            type="button"
+            className={`asmn-menu__toggle ${menuOpen ? "is-open" : ""}`}
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
+            aria-expanded={menuOpen}
+            aria-haspopup="true"
+          >
+            <span className="asmn-menu__bars" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+          </button>
+          <span className="asmn-menu__index" aria-live="polite">
+            ASMN {formatAsmnNumber(activeIndex)}.
+          </span>
+        </div>
+        <nav className="asmn-menu__panel" aria-label="セクションメニュー">
+          <ul className="asmn-menu__list">
+            {SECTION_MENU_ITEMS.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={`asmn-menu__item ${item.index === activeIndex ? "is-active" : ""}`}
+                  onClick={() => {
+                    goToIndex(item.index);
+                    setMenuOpen(false);
+                  }}
+                >
+                  <span className="asmn-menu__item-number">{item.number}.</span>
+                  <span className="asmn-menu__item-label">{item.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
       <div
         className="section-track"
         onTransitionEnd={onTrackTransitionEnd}

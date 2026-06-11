@@ -2,7 +2,6 @@
 
 import { useLayoutEffect, useRef } from "react";
 
-import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 import { mediaQueries } from "@/lib/breakpoints";
 import {
   FLOW_MARK_COLS,
@@ -245,15 +244,6 @@ export function HeroSection({
     >
       <div className="content-grid hero-grid">
         <div className="hero-meta col-span-12 md:col-span-1">
-          <div className="asm-cross-eyebrow-slot">
-            <AsmCrossEyebrow
-              ref={asmRef}
-              activeIndex={activeIndex}
-              className="reveal-item hero-bilingual-reveal"
-            >
-              ASMN 000.
-            </AsmCrossEyebrow>
-          </div>
           {/* 固定ヘッダーロゴ移行前と同じ縦位置を保つ（表示はヘッダーのみ） */}
           <p className="hero-brand hero-brand--layout-anchor" aria-hidden="true">
             Ascent strategy

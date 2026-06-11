@@ -2,7 +2,6 @@
 
 import { type CSSProperties, useLayoutEffect, useRef } from "react";
 
-import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 import { mediaQueries } from "@/lib/breakpoints";
 import {
   freezeAppViewportForSection,
@@ -214,14 +213,6 @@ export function CompanySection({ activeIndex = 0 }: { activeIndex?: number }) {
     <section ref={shellRef} className="section-shell company-shell">
       <div className="company-stack">
         <div className="message-titles-stack">
-          <div className="asm-cross-eyebrow-slot company-asmn-slot">
-            <AsmCrossEyebrow
-              activeIndex={activeIndex}
-              className="reveal-item reveal-delay-1 company-unified-asmn"
-            >
-              ASMN 005.
-            </AsmCrossEyebrow>
-          </div>
           <div className="message-titles-axis">
             <h2 className="message-heading reveal-item reveal-delay-2 company-title-unified">
               Company

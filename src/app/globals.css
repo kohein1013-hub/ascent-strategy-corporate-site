@@ -1063,6 +1063,169 @@ a {
   outline-offset: 4px;
 }
 
+/* ===== 右上 ASMN メニュー（ハンバーガー + セクションナンバリング） ===== */
+.asmn-menu {
+  position: fixed;
+  top: clamp(10px, 1.1vw, 16px);
+  right: clamp(1.2rem, 2.6vw, 3.4rem);
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.asmn-menu__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  pointer-events: auto;
+}
+
+.asmn-menu__index {
+  font-family: var(--font-brand-en);
+  font-size: clamp(0.68rem, 0.95vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  white-space: nowrap;
+  transform: translateY(-1px);
+}
+
+.asmn-menu__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: #ffffff;
+}
+
+.asmn-menu__toggle:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 4px;
+}
+
+.asmn-menu__bars {
+  position: relative;
+  display: block;
+  width: 22px;
+  height: 14px;
+}
+
+.asmn-menu__bars span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: currentColor;
+  transition:
+    transform 0.32s ease,
+    opacity 0.2s ease,
+    top 0.32s ease;
+}
+
+.asmn-menu__bars span:nth-child(1) {
+  top: 0;
+}
+
+.asmn-menu__bars span:nth-child(2) {
+  top: 6.25px;
+}
+
+.asmn-menu__bars span:nth-child(3) {
+  top: 12.5px;
+}
+
+.asmn-menu__toggle.is-open .asmn-menu__bars span:nth-child(1) {
+  top: 6.25px;
+  transform: rotate(45deg);
+}
+
+.asmn-menu__toggle.is-open .asmn-menu__bars span:nth-child(2) {
+  opacity: 0;
+}
+
+.asmn-menu__toggle.is-open .asmn-menu__bars span:nth-child(3) {
+  top: 6.25px;
+  transform: rotate(-45deg);
+}
+
+.asmn-menu__panel {
+  pointer-events: none;
+  margin-top: 0.85rem;
+  min-width: 220px;
+  padding: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(8, 12, 20, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    visibility 0.28s ease;
+  visibility: hidden;
+}
+
+.asmn-menu.is-open .asmn-menu__panel {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.asmn-menu__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.asmn-menu__item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: var(--font-brand-en);
+  letter-spacing: 0.06em;
+  text-align: left;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.asmn-menu__item:hover,
+.asmn-menu__item:focus-visible {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.07);
+  outline: none;
+}
+
+.asmn-menu__item.is-active {
+  color: #ffffff;
+}
+
+.asmn-menu__item-number {
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.asmn-menu__item-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .hero-grid {
   grid-template-rows: repeat(8, minmax(0, 1fr));
   align-content: stretch;
@@ -1647,7 +1810,7 @@ a {
     /* 右端ダッシュ手前（ハイフンが切れない余白） */
     --message-en-sp-inset-right: 8px;
     /*
-     * ASMN（Message SP）: 英語ブロック直���（MessageSection 配置後に同期）。
+     * ASMN（Message SP）: 英語ブロック直�����（MessageSection 配置後に同期）。
      * --message-asmn-en-offset-x: 英語ブロック左端からの横ずれ
      */
     --message-asmn-above-en-gap: 83px;
@@ -1911,7 +2074,7 @@ a {
 
   /*
    * Service FV SP: 位置確定まで待機。確定後は1フレーム静止してから
-   * ASMN・見出し・日本語キャッチを同一 keyframes で同時リビール。
+   * ASMN・見出し・日本語キャッチを同一 keyframes で���時リビール。
    */
   .service-shell:not(.service-entry-ready) .service-fv .reveal-item.asm-cross-eyebrow {
     visibility: hidden !important;
@@ -5067,6 +5230,19 @@ a {
     padding-right: max(var(--section-inline-pad), env(safe-area-inset-right, 0px));
   }
 
+  .asmn-menu {
+    top: max(env(safe-area-inset-top, 0px), clamp(8px, 1.2vh, 12px));
+    right: max(var(--section-inline-pad), env(safe-area-inset-right, 0px));
+  }
+
+  .asmn-menu__bar {
+    transform: translateY(-6px);
+  }
+
+  .asmn-menu__panel {
+    min-width: min(72vw, 240px);
+  }
+
   /* ロゴ共通位置: PC は translate(6px, -10px) のまま、SP のみ 6px 上へ */
   .site-header__brand {
     transform: translate(6px, -16px);
@@ -5451,7 +5627,7 @@ a {
 
   /*
    * キーボード表示中のみ Contact セクション内をスクロール（寸法トークンは固定のまま）。
-   * 問い合わせ欄・Send まで届かせるため stack の高さはフォーム全体分を確保する。
+   * ��い合わせ欄・Send まで届かせるため stack の高さはフォーム全体分を確保する。
    */
   .section-frame.is-active > .contact-shell.contact-shell--keyboard-scroll {
     height: var(--contact-keyboard-viewport-h);

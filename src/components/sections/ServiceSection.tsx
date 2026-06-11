@@ -2,7 +2,6 @@
 
 import { RefObject, useCallback, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
-import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 import { mediaQueries } from "@/lib/breakpoints";
 import { SECTION_INDEX } from "@/lib/sectionNavigation";
 import { isSectionTrackTransitioning } from "@/lib/sectionTrackTransition";
@@ -381,18 +380,6 @@ export function ServiceSection({ scrollRef, activeIndex = 0 }: Props) {
     <section ref={shellRef} className="section-shell service-shell">
       <div ref={scrollRef} className="service-scroll-area">
         <div className="service-fv">
-          <div className="asm-cross-eyebrow-slot service-asmn-slot">
-            <AsmCrossEyebrow
-              activeIndex={activeIndex}
-              className={
-                isPcGrid
-                  ? "reveal-item hero-bilingual-reveal"
-                  : "reveal-item service-unified-asmn"
-              }
-            >
-              ASMN 002.
-            </AsmCrossEyebrow>
-          </div>
           <div className="service-fv-main">
             <div className="message-titles-stack">
               <div className="message-titles-axis">
