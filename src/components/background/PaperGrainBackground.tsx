@@ -24,12 +24,9 @@ const SPHERE_SCALE_DEFAULT = (SPHERE_SCALE_MIN + SPHERE_SCALE_MAX) / 2;
 const INITIAL_GRAIN_FRAME_MS = 4_200;
 const NOISE_CAP = 0.014;
 const NOISE_BASE = 0.008;
-/** shape がブルー域に入りやすくする（表示時間を伸ばす） */
-const INTENSITY_MIN = 0.28;
-const INTENSITY_MAX = 0.54;
-const INTENSITY_BASE = 0.18;
-const SPEED_SCALE = 0.58;
-const OFFSET_RANGE = 0.22;
+/** ブルーのハイライトが画面を横切る幅（小さすぎると画面外に出る） */
+const OFFSET_RANGE = 0.4;
+const SPEED_SCALE = 0.72;
 
 type Props = {
   activeIndex: number;
@@ -48,14 +45,14 @@ type Motion = {
 
 function pickMotionTargets(): Motion {
   return {
-    intensity: INTENSITY_MIN + Math.random() * (INTENSITY_MAX - INTENSITY_MIN),
+    intensity: 0.16 + Math.random() * 0.42,
     noise: Math.random() * 0.012,
-    softness: 0.1 + Math.random() * 0.24,
+    softness: 0.05 + Math.random() * 0.22,
     scale: SPHERE_SCALE_MIN + Math.random() * (SPHERE_SCALE_MAX - SPHERE_SCALE_MIN),
     rotation: Math.random() * 360,
     offsetX: (Math.random() - 0.5) * OFFSET_RANGE,
     offsetY: (Math.random() - 0.5) * OFFSET_RANGE,
-    speed: 0.14 + Math.random() * 0.52,
+    speed: 0.18 + Math.random() * 0.72,
   };
 }
 
@@ -66,8 +63,8 @@ function pickInitialMotionTargets(): Motion {
     offsetX: (Math.random() - 0.5) * 0.14,
     offsetY: (Math.random() - 0.5) * 0.14,
     rotation: 88 + Math.random() * 84,
-    softness: Math.min(0.34, r.softness),
-    intensity: Math.min(0.46, Math.max(0.28, r.intensity * 0.88)),
+    softness: Math.min(0.3, r.softness),
+    intensity: Math.min(0.38, Math.max(0.18, r.intensity * 0.68)),
     noise: Math.min(r.noise, NOISE_CAP),
   };
 }
@@ -91,8 +88,8 @@ function buildUniforms(palette: readonly string[]) {
     u_colorBack: getShaderColorFromString(grainColorBack),
     u_colors: palette.map(getShaderColorFromString),
     u_colorsCount: palette.length,
-    u_softness: 0.28,
-    u_intensity: INTENSITY_BASE,
+    u_softness: 0.24,
+    u_intensity: 0.12,
     u_noise: NOISE_BASE,
     u_shape: GrainGradientShapes.sphere,
     u_noiseTexture: getShaderNoiseTexture(),
@@ -198,9 +195,9 @@ function WebGlGrainBackground({
       if (mq.matches) {
         mount.setSpeed(0.05);
         mount.setUniforms({
-          u_intensity: 0.22,
+          u_intensity: 0.14,
           u_noise: 0.006,
-          u_softness: 0.28,
+          u_softness: 0.22,
           u_scale: SPHERE_SCALE_DEFAULT,
           u_rotation: 0,
           u_offsetX: 0,
@@ -222,7 +219,7 @@ function WebGlGrainBackground({
         motionFrom.current = { ...m1 };
         motionTo.current = pickMotionTargets();
         segmentStart.current = now;
-        segmentMs.current = 3600 + Math.random() * 7200;
+        segmentMs.current = 2800 + Math.random() * 6800;
         u = 0;
         m0 = motionFrom.current;
         m1 = motionTo.current;
@@ -238,7 +235,7 @@ function WebGlGrainBackground({
       mount.setUniforms({
         u_intensity: lerp(m0.intensity, m1.intensity, t) + wiggle,
         u_noise: Math.min(NOISE_CAP, lerp(m0.noise, m1.noise, t)),
-        u_softness: Math.min(0.38, lerp(m0.softness, m1.softness, t)),
+        u_softness: Math.min(0.34, lerp(m0.softness, m1.softness, t)),
         u_scale: Math.min(
           SPHERE_SCALE_MAX,
           Math.max(SPHERE_SCALE_MIN, lerp(m0.scale, m1.scale, t)),
@@ -281,7 +278,7 @@ function WebGlGrainBackground({
         fragmentShader={grainGradientFragmentShader}
         uniforms={uniforms}
         frame={INITIAL_GRAIN_FRAME_MS}
-        speed={0.3}
+        speed={0.32}
         minPixelRatio={isCoarse ? 1 : 2}
         maxPixelCount={isCoarse ? 1280 * 720 : 2560 * 1440}
         webGlContextAttributes={{

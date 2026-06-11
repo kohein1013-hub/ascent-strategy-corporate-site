@@ -4,9 +4,6 @@ export const grainOrange = "#e04e28";
 /** ロイヤルブルー */
 export const grainRoyalBlue = "#4169e1";
 
-/** オレンジ→ブルー遷移。ブルーが出る閾値を少し下げて表示時間を伸ばす */
-const grainBlueBlend = "#6a78d4";
-
 /** オレンジ 7 割 / ロイヤルブルー 3 割（黒なし・11 色ストップ） */
 function palette70orange30blue(orange: string) {
   return [
@@ -17,7 +14,7 @@ function palette70orange30blue(orange: string) {
     orange,
     orange,
     orange,
-    grainBlueBlend,
+    orange,
     grainRoyalBlue,
     grainRoyalBlue,
     grainRoyalBlue,
