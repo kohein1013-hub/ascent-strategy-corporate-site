@@ -18,6 +18,7 @@ import {
 import { SECTION_INDEX } from "@/lib/sectionNavigation";
 import { isSectionTrackTransitioning } from "@/lib/sectionTrackTransition";
 import { usePcShellAsmHeroReveal } from "@/lib/usePcShellAsmHeroReveal";
+import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 
 const approachItems: {
   key: string;
@@ -449,6 +450,15 @@ export function ApproachSection({ activeIndex = 0 }: { activeIndex?: number }) {
   return (
     <section ref={shellRef} className="section-shell approach-shell">
       <div className="message-titles-stack">
+        <div className="asm-cross-eyebrow-slot approach-asmn-slot col-span-12 md:col-span-3 md:row-start-1">
+          <AsmCrossEyebrow
+            activeIndex={activeIndex}
+            className="reveal-item hero-bilingual-reveal"
+            hideLabel
+          >
+            ASMN 003.
+          </AsmCrossEyebrow>
+        </div>
         <div className="message-titles-axis">
           <div className="approach-heading-axis">
             <h2 className="message-heading reveal-item reveal-delay-2">

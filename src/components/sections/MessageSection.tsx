@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef } from "react";
 import { mediaQueries } from "@/lib/breakpoints";
 import { SECTION_INDEX } from "@/lib/sectionNavigation";
 import { isSectionTrackTransitioning } from "@/lib/sectionTrackTransition";
+import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 import {
   FLOW_MARK_COLS,
   FOCUS_ROWS,
@@ -423,6 +424,16 @@ export function MessageSection({ activeIndex = 0 }: Props) {
 
       <div className="message-body">
         <div className="content-grid message-body-grid">
+          <div className="asm-cross-eyebrow-slot col-span-12 md:col-span-3 md:row-start-1">
+            <AsmCrossEyebrow
+              activeIndex={activeIndex}
+              className="reveal-item hero-bilingual-reveal"
+              hideLabel
+            >
+              ASMN 001.
+            </AsmCrossEyebrow>
+          </div>
+
           <div className="message-col message-col--jp col-span-12 md:row-start-2 reveal-item reveal-delay-4 message-unified-reveal">
             <div className="message-jp-axis">
               <p className="lead message-jp-text">

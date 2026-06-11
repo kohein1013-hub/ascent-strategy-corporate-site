@@ -2886,6 +2886,17 @@ a {
   }
 }
 
+/* PC: Service 見出し／タグラインのリビール（SP は service-fv-reveal-go で別制御）。
+   見出しは汎用リビール除外リストに入っているため、PC 専用ルールが必要。 */
+@media (min-width: 769px) {
+  .section-frame.is-active
+    .section-shell.service-shell
+    .reveal-item.service-fv-unified-reveal {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .section-frame.is-active .section-shell.company-shell .company-table-label,
 .section-frame.is-active .section-shell.company-shell .company-table-value {
   animation: company-text-reveal 0.48s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;

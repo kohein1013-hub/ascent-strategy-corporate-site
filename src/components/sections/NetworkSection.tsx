@@ -20,6 +20,7 @@ import {
 import { SECTION_INDEX } from "@/lib/sectionNavigation";
 import { isSectionTrackTransitioning } from "@/lib/sectionTrackTransition";
 import { usePcShellAsmHeroReveal } from "@/lib/usePcShellAsmHeroReveal";
+import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 
 function subscribePcGrid(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => undefined;
@@ -599,6 +600,19 @@ export function NetworkSection({ activeIndex = 0 }: { activeIndex?: number }) {
     <section ref={shellRef} className="section-shell network-shell">
       <div className="network-stack">
         <div className="message-titles-stack">
+          <div className="asm-cross-eyebrow-slot network-asmn-slot col-span-12 md:col-span-3 md:col-start-1 md:row-start-1">
+            <AsmCrossEyebrow
+              activeIndex={activeIndex}
+              className={
+                isPcGrid
+                  ? "reveal-item hero-bilingual-reveal"
+                  : "reveal-item network-unified-asmn"
+              }
+              hideLabel
+            >
+              ASMN 004.
+            </AsmCrossEyebrow>
+          </div>
           <div className="message-titles-axis">
             <div className="network-heading-axis">
               <h2 className="message-heading reveal-item reveal-delay-2">Network</h2>

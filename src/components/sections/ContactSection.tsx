@@ -13,6 +13,7 @@ import {
 } from "@/lib/lockSpTitleBandLayout";
 import { SECTION_INDEX } from "@/lib/sectionNavigation";
 import { isSectionTrackTransitioning } from "@/lib/sectionTrackTransition";
+import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 
 /** タイトル帯リビール（keyframes 0.7s）+ 余裕 */
 const CONTACT_TITLES_REVEAL_LOCK_MS = 1100;
@@ -244,6 +245,15 @@ export function ContactSection({
     >
       <div className="contact-stack">
         <div className="message-titles-stack">
+          <div className="asm-cross-eyebrow-slot contact-asmn-slot">
+            <AsmCrossEyebrow
+              activeIndex={activeIndex}
+              className="reveal-item reveal-delay-1 contact-unified-asmn"
+              hideLabel
+            >
+              ASMN 006.
+            </AsmCrossEyebrow>
+          </div>
           <div className="message-titles-axis">
             <h2 className="message-heading reveal-item reveal-delay-2 contact-title-unified">
               Contact

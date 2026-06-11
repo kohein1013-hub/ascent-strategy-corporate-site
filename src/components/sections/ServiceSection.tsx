@@ -6,6 +6,7 @@ import { mediaQueries } from "@/lib/breakpoints";
 import { SECTION_INDEX } from "@/lib/sectionNavigation";
 import { isSectionTrackTransitioning } from "@/lib/sectionTrackTransition";
 import { usePcShellAsmHeroReveal } from "@/lib/usePcShellAsmHeroReveal";
+import { AsmCrossEyebrow } from "@/components/ui/AsmCrossEyebrow";
 type LineSection = {
   title: string;
   items: string[];
@@ -380,6 +381,19 @@ export function ServiceSection({ scrollRef, activeIndex = 0 }: Props) {
     <section ref={shellRef} className="section-shell service-shell">
       <div ref={scrollRef} className="service-scroll-area">
         <div className="service-fv">
+          <div className="asm-cross-eyebrow-slot service-asmn-slot">
+            <AsmCrossEyebrow
+              activeIndex={activeIndex}
+              className={
+                isPcGrid
+                  ? "reveal-item hero-bilingual-reveal"
+                  : "reveal-item service-unified-asmn"
+              }
+              hideLabel
+            >
+              ASMN 002.
+            </AsmCrossEyebrow>
+          </div>
           <div className="service-fv-main">
             <div className="message-titles-stack">
               <div className="message-titles-axis">

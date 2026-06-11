@@ -26,6 +26,11 @@ type Props = {
   /** オーバーレイのフォーカスが変わったときに再計算する */
   activeIndex?: number;
   className?: string;
+  /**
+   * ASMN 番号テキストを視覚的に隠す（幅・座標計測のレイアウト責務は維持）。
+   * 番号表示はヘッダーメニューへ一本化したため、各セクションでは計測のみ行う。
+   */
+  hideLabel?: boolean;
 };
 
 /**
@@ -36,7 +41,7 @@ type Props = {
  */
 export const AsmCrossEyebrow = forwardRef<HTMLParagraphElement, Props>(
   function AsmCrossEyebrow(
-    { children, activeIndex = 0, className = "" },
+    { children, activeIndex = 0, className = "", hideLabel = false },
     forwardedRef: Ref<HTMLParagraphElement>,
   ) {
     const innerRef = useRef<HTMLParagraphElement | null>(null);
@@ -781,7 +786,16 @@ export const AsmCrossEyebrow = forwardRef<HTMLParagraphElement, Props>(
     }, [activeIndex]);
 
     return (
-      <p ref={setRef} className={`eyebrow asm-cross-eyebrow ${className}`.trim()}>
+      <p
+        ref={setRef}
+        className={`eyebrow asm-cross-eyebrow ${className}`.trim()}
+        aria-hidden={hideLabel ? true : undefined}
+        style={
+          hideLabel
+            ? { color: "transparent", userSelect: "none" }
+            : undefined
+        }
+      >
         {children}
       </p>
     );
