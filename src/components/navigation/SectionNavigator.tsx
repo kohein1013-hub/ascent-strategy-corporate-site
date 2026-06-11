@@ -85,6 +85,25 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
   const committedActiveIndex =
     (effectiveActiveTrackIndex - 1 + sectionIds.length) % sectionIds.length;
 
+  const [isPcGrid, setIsPcGrid] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia(mediaQueries.grid).matches
+      : false,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia(mediaQueries.grid);
+    const sync = () => setIsPcGrid(mq.matches);
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  /** PC: 遷移開始と同時に先セクションのリビール。SP: committed 遅延でチラつき防止 */
+  const sectionRevealIndex = isPcGrid ? activeIndex : committedActiveIndex;
+
+  const isTrackFrameVisible = (trackIndex: number) =>
+    virtualIndex === trackIndex || slideSourceTrackIndex === trackIndex;
+
   const pinTrackOffsetForTitleBandSections = useCallback(() => {
     if (
       activeIndex !== SECTION_INDEX.company &&
@@ -778,42 +797,42 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
         {renderSectionFrame(
           0,
           <ContactSection
-            activeIndex={committedActiveIndex}
+            activeIndex={sectionRevealIndex}
             isLoopClone
-            isFrameActive={virtualIndex === 0}
+            isFrameActive={isTrackFrameVisible(0)}
           />,
         )}
         {renderSectionFrame(
           1,
           <HeroSection
-            activeIndex={committedActiveIndex}
-            isFrameActive={virtualIndex === 1}
+            activeIndex={sectionRevealIndex}
+            isFrameActive={isTrackFrameVisible(1)}
             isLoopClone={false}
           />,
         )}
-        {renderSectionFrame(2, <MessageSection activeIndex={committedActiveIndex} />)}
+        {renderSectionFrame(2, <MessageSection activeIndex={sectionRevealIndex} />)}
         {renderSectionFrame(
           3,
           <ServiceSection
             scrollRef={serviceScrollRef}
-            activeIndex={committedActiveIndex}
+            activeIndex={sectionRevealIndex}
           />,
         )}
-        {renderSectionFrame(4, <ApproachSection activeIndex={committedActiveIndex} />)}
-        {renderSectionFrame(5, <NetworkSection activeIndex={committedActiveIndex} />)}
-        {renderSectionFrame(6, <CompanySection activeIndex={committedActiveIndex} />)}
+        {renderSectionFrame(4, <ApproachSection activeIndex={sectionRevealIndex} />)}
+        {renderSectionFrame(5, <NetworkSection activeIndex={sectionRevealIndex} />)}
+        {renderSectionFrame(6, <CompanySection activeIndex={sectionRevealIndex} />)}
         {renderSectionFrame(
           7,
           <ContactSection
-            activeIndex={committedActiveIndex}
-            isFrameActive={virtualIndex === sectionIds.length}
+            activeIndex={sectionRevealIndex}
+            isFrameActive={isTrackFrameVisible(sectionIds.length)}
           />,
         )}
         {renderSectionFrame(
           8,
           <HeroSection
-            activeIndex={committedActiveIndex}
-            isFrameActive={virtualIndex === 8}
+            activeIndex={sectionRevealIndex}
+            isFrameActive={isTrackFrameVisible(8)}
             isLoopClone
           />,
         )}

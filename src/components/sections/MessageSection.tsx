@@ -355,6 +355,14 @@ export function MessageSection({ activeIndex = 0 }: Props) {
 
       scheduleRevealIfStable();
 
+      /*
+       * Hero→MESSAGE: スライド終了直前まで待つと約 1s 空白になるため、侵入直後（140ms）にリビール開始。
+       * 他セクションからは従来どおりスライド後半で計測（縦ズレ防止）。
+       */
+      const revealDelayMs = enteredFromHero
+        ? asmRevealLeadMs
+        : Math.max(0, SECTION_SLIDE_MS - asmRevealLeadMs);
+
       const revealLeadId = window.setTimeout(() => {
         if (
           activeIndex === SECTION_INDEX.message &&
@@ -362,7 +370,7 @@ export function MessageSection({ activeIndex = 0 }: Props) {
         ) {
           runReadySoon();
         }
-      }, Math.max(0, SECTION_SLIDE_MS - asmRevealLeadMs));
+      }, revealDelayMs);
 
       track?.addEventListener("transitionend", onTrackTransitionEnd);
 

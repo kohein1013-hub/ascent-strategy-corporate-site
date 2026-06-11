@@ -605,6 +605,32 @@ a {
     > .service-scroll-area {
     overflow-y: hidden;
   }
+
+  /*
+   * 侵入先フレーム（is-virtual-active）をスライド中も表示。
+   * 非表示のままだと Hero→Message 等で約 1s の空白になる。
+   */
+  .section-track.is-transitioning
+    > .section-frame.is-virtual-active:not(.is-slide-source)
+    > :is(
+      .section-shell--message,
+      .section-shell--service,
+      .section-shell--approach,
+      .section-shell--network,
+      .section-shell--hero
+    ) {
+    visibility: visible !important;
+    pointer-events: none;
+  }
+
+  .section-track.is-transitioning
+    > .section-frame.is-virtual-active:not(.is-slide-source)
+    > .section-shell--message.message-entry-ready
+    .message-unified-reveal.reveal-item:not(.asm-cross-eyebrow) {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    visibility: visible;
+  }
 }
 
 .reveal-item {

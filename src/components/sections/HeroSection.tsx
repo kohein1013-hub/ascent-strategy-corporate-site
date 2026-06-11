@@ -41,6 +41,11 @@ export function HeroSection({
       return;
     }
 
+    /* PC: Hero→Message スライド中は activeIndex だけ変わる。再初期化で英日が消えないよう維持 */
+    if (shell.classList.contains("hero-entry-ready")) {
+      return;
+    }
+
     shell.classList.remove("hero-entry-ready");
 
     const mqGrid = window.matchMedia(mediaQueries.grid);
