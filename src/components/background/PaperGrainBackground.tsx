@@ -118,8 +118,8 @@ function CssGrainBackground({
   const palette = sectionPalettes[activeIndex % sectionPalettes.length];
   const orange = palette[0];
   const blue = palette[palette.length - 1];
-  const c1 = hexToRgba(orange, 0.74);
-  const c2 = hexToRgba(blue, 0.36);
+  const c1 = hexToRgba(orange, 0.66);
+  const c2 = hexToRgba(blue, 0.48);
 
   return (
     <div className="paper-grain-bg paper-grain-bg--css" aria-hidden>
@@ -127,7 +127,7 @@ function CssGrainBackground({
         className="paper-grain-bg__blob paper-grain-bg__blob--a"
         style={
           {
-            background: `radial-gradient(circle at 38% 52%, ${c1}, transparent 78%)`,
+            background: `radial-gradient(circle at 38% 52%, ${c1}, transparent 72%)`,
           } as CSSProperties
         }
       />
@@ -135,7 +135,7 @@ function CssGrainBackground({
         className="paper-grain-bg__blob paper-grain-bg__blob--b"
         style={
           {
-            background: `radial-gradient(circle at 78% 24%, ${c2}, transparent 44%)`,
+            background: `radial-gradient(circle at 76% 28%, ${c2}, transparent 56%)`,
           } as CSSProperties
         }
       />
