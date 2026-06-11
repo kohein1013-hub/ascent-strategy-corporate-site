@@ -1,16 +1,24 @@
-/** グラデーション用の純黒 */
-export const gradientBlack = "#000000";
+/** 参考画像よりやや明るいオレンジ */
+export const grainOrange = "#e04e28";
 
-/** Paper Grain：オレンジ → 青 → 黒（3 色） */
+/** ロイヤルブルー */
+export const grainRoyalBlue = "#4169e1";
+
+/** オレンジ 8 割 / ロイヤルブルー 2 割（黒なし・6 色ストップ） */
+function palette80orange20blue(orange: string) {
+  return [orange, orange, orange, orange, orange, grainRoyalBlue] as const;
+}
+
+/** Paper Grain：セクションごとにオレンジをわずかに変化 */
 export const sectionPalettes = [
-  ["#c4341c", "#1a43b2", gradientBlack],
-  ["#bc2f18", "#173ea5", gradientBlack],
-  ["#c4371e", "#1e47b2", gradientBlack],
-  ["#b82b16", "#13389d", gradientBlack],
-  ["#c0331a", "#1c41ae", gradientBlack],
-  ["#b62914", "#153399", gradientBlack],
-  ["#c2371c", "#1840aa", gradientBlack],
+  palette80orange20blue("#e04e28"),
+  palette80orange20blue("#de4a24"),
+  palette80orange20blue("#e3522c"),
+  palette80orange20blue("#dc4826"),
+  palette80orange20blue("#e04c2a"),
+  palette80orange20blue("#da4622"),
+  palette80orange20blue("#e25028"),
 ] as const;
 
-/** Grain の背面。:root --surface と揃える */
-export const grainColorBack = "#040405";
+/** Grain の背面。黒ではなくオレンジ系の暗色 */
+export const grainColorBack = "#c43820";

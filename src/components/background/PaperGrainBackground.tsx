@@ -80,13 +80,13 @@ function lerpAngleDeg(from: number, to: number, t: number): number {
   return from + d * t;
 }
 
-function buildUniforms(palette: readonly [string, string, string]) {
+function buildUniforms(palette: readonly string[]) {
   return {
     u_colorBack: getShaderColorFromString(grainColorBack),
     u_colors: palette.map(getShaderColorFromString),
     u_colorsCount: palette.length,
-    u_softness: 0.2,
-    u_intensity: 0.14,
+    u_softness: 0.24,
+    u_intensity: 0.12,
     u_noise: NOISE_BASE,
     u_shape: GrainGradientShapes.sphere,
     u_noiseTexture: getShaderNoiseTexture(),
@@ -116,8 +116,10 @@ function CssGrainBackground({
   activeIndex: number;
 }) {
   const palette = sectionPalettes[activeIndex % sectionPalettes.length];
-  const c1 = hexToRgba(palette[0], 0.52);
-  const c2 = hexToRgba(palette[1], 0.48);
+  const orange = palette[0];
+  const blue = palette[palette.length - 1];
+  const c1 = hexToRgba(orange, 0.74);
+  const c2 = hexToRgba(blue, 0.36);
 
   return (
     <div className="paper-grain-bg paper-grain-bg--css" aria-hidden>
@@ -125,7 +127,7 @@ function CssGrainBackground({
         className="paper-grain-bg__blob paper-grain-bg__blob--a"
         style={
           {
-            background: `radial-gradient(circle at 30% 28%, ${c1}, transparent 62%)`,
+            background: `radial-gradient(circle at 38% 52%, ${c1}, transparent 78%)`,
           } as CSSProperties
         }
       />
@@ -133,7 +135,7 @@ function CssGrainBackground({
         className="paper-grain-bg__blob paper-grain-bg__blob--b"
         style={
           {
-            background: `radial-gradient(circle at 72% 68%, ${c2}, transparent 64%)`,
+            background: `radial-gradient(circle at 78% 24%, ${c2}, transparent 44%)`,
           } as CSSProperties
         }
       />
