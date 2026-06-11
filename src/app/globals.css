@@ -114,8 +114,14 @@ html[data-ja-font="mincho"] {
 
 html[data-ja-font="gothic"],
 html[data-ja-font="mincho"] {
-  /* 英語本文はモードに関わらずゴシック系 */
+  /* 英語本文・英字 UI はモードに関わらずゴシック系 */
   --font-en-text: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+  --font-brand-en: var(--font-din-2014), var(--font-noto-sans-jp), sans-serif;
+}
+
+/* 明朝モードでもゴシック維持（ASMN・ロゴ・Hero 英語・セクション英字ラベル・Approach チップタイトル） */
+.asm-cross-eyebrow {
+  font-family: var(--font-brand-en);
 }
 
 * {
@@ -968,7 +974,7 @@ a {
 
 .hero-brand {
   margin: 0;
-  font-family: var(--font-brand-ja);
+  font-family: var(--font-brand-en);
   font-size: clamp(0.68rem, 0.95vw, 0.82rem);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -1052,6 +1058,7 @@ a {
 
 .hero-subtitle {
   margin-top: clamp(0.55rem, 1.05vw, 0.95rem);
+  font-family: var(--font-en-text);
   font-size: clamp(0.96rem, 1.28vw, 1.2rem);
   font-weight: 500;
   line-height: 1.45;
@@ -1063,6 +1070,7 @@ a {
 .hero-support {
   margin-top: clamp(0.5rem, 0.95vw, 0.85rem);
   max-width: min(22rem, 100%);
+  font-family: var(--font-en-text);
   font-size: clamp(0.7rem, 0.82vw, 0.82rem);
   line-height: 1.55;
   color: rgba(233, 237, 255, 0.82);
@@ -1113,7 +1121,7 @@ a {
 /* Message: ASM ラベルとは別の英字見出し */
 .message-heading {
   margin: 0 0 0.75rem;
-  font-family: var(--font-brand-ja);
+  font-family: var(--font-brand-en);
   font-size: clamp(0.7rem, 0.9vw, 0.8rem);
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -4669,6 +4677,7 @@ a {
   width: 100%;
   text-align: center;
   color: var(--text-secondary);
+  font-family: var(--font-brand-en);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
