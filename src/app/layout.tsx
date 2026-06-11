@@ -5,6 +5,7 @@ import {
   Noto_Sans_JP,
   Noto_Serif_JP,
 } from "next/font/google";
+import { JAPANESE_FONT_MODE } from "@/lib/japaneseFontMode";
 import "./globals.css";
 
 const notoSans = Noto_Sans_JP({
@@ -50,6 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
+      data-ja-font={JAPANESE_FONT_MODE}
       className={`${notoSans.variable} ${notoSerif.variable} ${brandLogo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

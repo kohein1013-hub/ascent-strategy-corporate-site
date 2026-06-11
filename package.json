@@ -6,8 +6,11 @@
     "dev": "next dev",
     "dev:lan": "LAN_DEV_ORIGINS=100.64.1.71,10.13.88.210,$(ipconfig getifaddr en0) next dev --hostname 0.0.0.0 --port 3000",
     "dev:lan:3001": "LAN_DEV_ORIGINS=100.64.1.71,10.13.88.210,$(ipconfig getifaddr en0) next dev --hostname 0.0.0.0 --port 3001",
+    "dev:status": "bash scripts/dev-server.sh status",
+    "dev:stop": "bash scripts/dev-server.sh stop",
     "build": "next build",
     "start": "next start",
+    "preview:prod": "npm run dev:stop && npm run build && npm run start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check ."

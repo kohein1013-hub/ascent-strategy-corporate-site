@@ -93,10 +93,29 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-noto-sans-jp);
-  --font-serif: var(--font-noto-serif-jp);
+  --font-sans: var(--font-ja-text);
+  --font-serif: var(--font-ja-emphasis);
   /* grid モード開始（breakpoints.ts BREAKPOINT_GRID_MIN_PX）と md: を一致 */
   --breakpoint-md: 48.0625rem;
+}
+
+/* 日本語フォント切替: src/lib/japaneseFontMode.ts → layout data-ja-font */
+html[data-ja-font="gothic"] {
+  --font-ja-text: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  --font-ja-emphasis: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  --font-brand-ja: var(--font-din-2014), var(--font-noto-sans-jp), sans-serif;
+}
+
+html[data-ja-font="mincho"] {
+  --font-ja-text: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  --font-ja-emphasis: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  --font-brand-ja: var(--font-din-2014), var(--font-noto-serif-jp), serif;
+}
+
+html[data-ja-font="gothic"],
+html[data-ja-font="mincho"] {
+  /* 英語本文はモードに関わらずゴシック系 */
+  --font-en-text: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
@@ -112,7 +131,7 @@ body {
   margin: 0;
   background: var(--surface);
   color: var(--text-primary);
-  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-family: var(--font-ja-text);
 }
 
 /* 実機 SP: ページ全体のネイティブスクロールを抑止（セクションスワイプと競合しないように） */
@@ -922,7 +941,7 @@ a {
 }
 
 .hero-title {
-  font-family: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  font-family: var(--font-ja-emphasis);
   font-weight: 700;
   font-size: clamp(1.62rem, 3.95vw, 3.7rem);
   line-height: 1.18;
@@ -949,7 +968,7 @@ a {
 
 .hero-brand {
   margin: 0;
-  font-family: var(--font-din-2014), var(--font-noto-sans-jp), sans-serif;
+  font-family: var(--font-brand-ja);
   font-size: clamp(0.68rem, 0.95vw, 0.82rem);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -1085,7 +1104,7 @@ a {
 }
 
 .section-title {
-  font-family: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  font-family: var(--font-ja-emphasis);
   font-size: clamp(1.8rem, 4vw, 4.3rem);
   line-height: 1.08;
   letter-spacing: -0.015em;
@@ -1094,7 +1113,7 @@ a {
 /* Message: ASM ラベルとは別の英字見出し */
 .message-heading {
   margin: 0 0 0.75rem;
-  font-family: var(--font-din-2014), var(--font-noto-sans-jp), sans-serif;
+  font-family: var(--font-brand-ja);
   font-size: clamp(0.7rem, 0.9vw, 0.8rem);
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -1106,7 +1125,7 @@ a {
 .message-tagline {
   margin: 0;
   max-width: 100%;
-  font-family: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  font-family: var(--font-ja-emphasis);
   font-weight: 700;
   font-size: clamp(0.95rem, 2.05vw, 1.5rem);
   line-height: 1.22;
@@ -1319,7 +1338,7 @@ a {
 
 .message-en-lead {
   margin: 0 0 0.85rem;
-  font-family: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-en-text);
   font-size: clamp(0.78rem, 1.05vw, 0.92rem);
   font-weight: 700;
   line-height: 1.45;
@@ -1329,7 +1348,7 @@ a {
 
 .message-en-body {
   margin: 0 0 0.75rem;
-  font-family: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-en-text);
   font-size: clamp(0.7rem, 0.95vw, 0.84rem);
   font-weight: 400;
   line-height: 1.65;
@@ -3090,7 +3109,7 @@ a {
   align-items: center;
   margin: 0;
   padding: 0 var(--contact-field-pad-inline-end);
-  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-family: var(--font-ja-text);
   font-size: var(--contact-field-font-size);
   font-weight: var(--contact-field-font-weight);
   letter-spacing: var(--contact-field-letter-spacing);
@@ -3120,7 +3139,7 @@ a {
   display: flex;
   align-items: center;
   padding: 0 var(--contact-field-pad-inline-end);
-  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-family: var(--font-ja-text);
   font-size: var(--contact-field-font-size);
   font-weight: var(--contact-field-font-weight);
   letter-spacing: var(--contact-field-letter-spacing);
@@ -3335,7 +3354,7 @@ a {
   padding: 0 var(--contact-field-pad-inline-end);
   border: none;
   background: transparent;
-  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-family: var(--font-ja-text);
   font-size: var(--contact-field-font-size);
   font-weight: var(--contact-field-font-weight);
   line-height: var(--contact-field-line-height);
@@ -3413,7 +3432,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: clamp(0.35rem, 0.8vw, 0.55rem);
-  font-family: var(--font-din-2014), var(--font-noto-sans-jp), sans-serif;
+  font-family: var(--font-brand-ja);
   font-size: clamp(0.82rem, 1.05vw, 0.96rem);
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -3793,7 +3812,7 @@ a {
     padding: var(--network-chip-pad-y) var(--network-chip-pad-x);
     text-align: center;
     color: var(--text-secondary);
-    font-family: var(--font-noto-sans-jp), sans-serif;
+    font-family: var(--font-ja-text);
     font-size: clamp(0.65rem, 0.82vw, 0.72rem);
     font-weight: 600;
     letter-spacing: 0.05em;
@@ -3837,7 +3856,7 @@ a {
     max-height: min(22vh, 140px);
     overflow-y: auto;
     opacity: var(--approach-chip-accent);
-    font-family: var(--font-noto-sans-jp), sans-serif;
+    font-family: var(--font-ja-text);
     font-size: clamp(0.62rem, 0.78vw, 0.68rem);
     font-weight: 400;
     line-height: 1.48;
@@ -3873,7 +3892,7 @@ a {
 /* Network：monopo 系の縦リスト（区切り線）＋ホバーで右カラムに詳細 */
 .network-list-kicker {
   margin: 0 0 clamp(0.45rem, 1.2vw, 0.65rem);
-  font-family: var(--font-noto-sans-jp), sans-serif;
+  font-family: var(--font-ja-text);
   font-size: clamp(0.58rem, 0.72vw, 0.65rem);
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -3903,7 +3922,7 @@ a {
 }
 
 .network-list-label {
-  font-family: var(--font-noto-sans-jp), sans-serif;
+  font-family: var(--font-ja-text);
   font-size: clamp(0.65rem, 0.82vw, 0.72rem);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -4453,7 +4472,7 @@ a {
   font-size: clamp(0.78rem, 1.35vw, 0.96rem);
   font-weight: 600;
   line-height: 1.4;
-  font-family: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  font-family: var(--font-ja-emphasis);
 }
 
 .service-body-stack .service-tagline {
@@ -4795,7 +4814,7 @@ a {
     min-width: 0;
     text-align: center;
     color: rgba(236, 238, 251, 0.92);
-    font-family: var(--font-noto-sans-jp), sans-serif;
+    font-family: var(--font-ja-text);
     font-size: clamp(0.52rem, 2.3vw, 0.62rem);
     font-weight: 600;
     letter-spacing: 0.05em;
@@ -4832,7 +4851,7 @@ a {
     max-width: 100%;
     max-height: min(28vh, 160px);
     overflow-y: auto;
-    font-family: var(--font-noto-sans-jp), sans-serif;
+    font-family: var(--font-ja-text);
     font-size: clamp(0.58rem, 2.45vw, 0.68rem);
     font-weight: 400;
     line-height: 1.48;
