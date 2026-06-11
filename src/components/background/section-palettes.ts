@@ -6,10 +6,13 @@ export const grainRoyalBlue = "#4169e1";
 
 /**
  * Paper Grain：オレンジ → ロイヤルブルー（3 色・黒なし）
- * 元の [橙, 青, 黒] と同じ shape 閾値（青は shape 0.5 付近から出る）
+ * 画面占有比をオレンジ 70% / ロイヤルブルー 30% に寄せる。
+ * 3 色は shape 値 [0,1] に等間隔（0 / 0.5 / 1）で並ぶため、
+ * [橙, 橙, 青] にすると前半 50% が橙のまま、後半で橙→青へ遷移し、
+ * 青が支配的になるのは概ね後方 30% に収まる。
  */
 function paletteOrangeRoyalBlue(orange: string) {
-  return [orange, grainRoyalBlue, grainRoyalBlue] as const;
+  return [orange, orange, grainRoyalBlue] as const;
 }
 
 /** Paper Grain：セクションごとにオレンジをわずかに変化 */

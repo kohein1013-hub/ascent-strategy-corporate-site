@@ -25,8 +25,14 @@ const INITIAL_GRAIN_FRAME_MS = 4_200;
 const NOISE_CAP = 0.014;
 const NOISE_BASE = 0.008;
 /** ブルーのハイライトが画面を横切る幅（小さすぎると画面外に出る） */
-const OFFSET_RANGE = 0.4;
+const OFFSET_RANGE = 0.34;
 const SPEED_SCALE = 0.72;
+/**
+ * 画面占有比をオレンジ 70% / ブルー 30%（時間平均）に寄せるためのバイアス。
+ * ブルーのスフィアを常に右下寄りに置き、強度を抑えてオレンジを主役にする。
+ */
+const BLUE_OFFSET_BIAS_X = 0.22;
+const BLUE_OFFSET_BIAS_Y = 0.2;
 
 type Props = {
   activeIndex: number;
@@ -45,13 +51,15 @@ type Motion = {
 
 function pickMotionTargets(): Motion {
   return {
-    intensity: 0.16 + Math.random() * 0.42,
+    // ブルーの広がりを抑えめにし、オレンジ優勢（約 70%）を保つ
+    intensity: 0.1 + Math.random() * 0.2,
     noise: Math.random() * 0.012,
     softness: 0.05 + Math.random() * 0.22,
     scale: SPHERE_SCALE_MIN + Math.random() * (SPHERE_SCALE_MAX - SPHERE_SCALE_MIN),
     rotation: Math.random() * 360,
-    offsetX: (Math.random() - 0.5) * OFFSET_RANGE,
-    offsetY: (Math.random() - 0.5) * OFFSET_RANGE,
+    // ブルーのスフィアを常に右下寄りにバイアスして画面占有を約 30% に収める
+    offsetX: BLUE_OFFSET_BIAS_X + (Math.random() - 0.5) * OFFSET_RANGE,
+    offsetY: BLUE_OFFSET_BIAS_Y + (Math.random() - 0.5) * OFFSET_RANGE,
     speed: 0.18 + Math.random() * 0.72,
   };
 }
@@ -60,11 +68,11 @@ function pickInitialMotionTargets(): Motion {
   const r = pickMotionTargets();
   return {
     ...r,
-    offsetX: (Math.random() - 0.5) * 0.14,
-    offsetY: (Math.random() - 0.5) * 0.14,
+    offsetX: BLUE_OFFSET_BIAS_X + (Math.random() - 0.5) * 0.12,
+    offsetY: BLUE_OFFSET_BIAS_Y + (Math.random() - 0.5) * 0.12,
     rotation: 88 + Math.random() * 84,
     softness: Math.min(0.3, r.softness),
-    intensity: Math.min(0.38, Math.max(0.18, r.intensity * 0.68)),
+    intensity: Math.min(0.24, Math.max(0.12, r.intensity * 0.68)),
     noise: Math.min(r.noise, NOISE_CAP),
   };
 }
@@ -130,7 +138,7 @@ function CssGrainBackground({
         className="paper-grain-bg__blob paper-grain-bg__blob--a"
         style={
           {
-            background: `radial-gradient(circle at 36% 54%, ${c1}, transparent 70%)`,
+            background: `radial-gradient(circle at 38% 50%, ${c1}, transparent 78%)`,
           } as CSSProperties
         }
       />
@@ -138,7 +146,7 @@ function CssGrainBackground({
         className="paper-grain-bg__blob paper-grain-bg__blob--b"
         style={
           {
-            background: `radial-gradient(circle at 74% 26%, ${c2}, transparent 62%)`,
+            background: `radial-gradient(circle at 84% 78%, ${c2}, transparent 52%)`,
           } as CSSProperties
         }
       />
