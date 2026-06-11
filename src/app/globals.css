@@ -82,6 +82,7 @@
     --hero-copy-pc-offset-x: 25px;
     --hero-asmn-above-title-gap: 12px;
     --hero-asmn-pc-offset-x: 0px;
+    --hero-asmn-pc-offset-y: -15px;
   }
 
   .section-shell--hero .hero-copy-group {
@@ -89,6 +90,10 @@
       var(--hero-copy-aligned-left, var(--hero-copy-inline-inset-left)) +
         var(--hero-copy-pc-offset-x)
     );
+  }
+
+  .section-shell--hero .asm-cross-eyebrow-slot {
+    transform: translateY(var(--hero-asmn-pc-offset-y));
   }
 }
 
