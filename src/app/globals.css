@@ -10,6 +10,12 @@
   --card-border: rgba(211, 217, 252, 0.22);
   /* 十字オーバーレイの上下マージン＝英語ヒーローの左右基準（同一トークン）。1/1 基準で固定 30px */
   --cross-inset: 30px;
+  /*
+   * グリッド全体（十字平面＋全セクションの縦基点）を比率を変えずに下げる量。
+   * 上部にロゴ／右上ハンバーガー用の余白を確保するための平行移動。
+   * 横幅計算に使う --cross-inset は据え置き、縦方向のみここで下げる。
+   */
+  --grid-top-shift: 10px;
   /* 十字フォーカス・アーム（GridOverlay .cross-focus-arm と共有） */
   --cross-arm-line-size: 1px;
   --cross-arm-line-color: #ffffff;
@@ -200,6 +206,8 @@ body {
   min-height: 0;
   overflow: hidden;
   box-sizing: border-box;
+  /* 十字グリッド(.grid-overlay)と同じ量だけ下げ、交差点との整合・比率を維持する */
+  transform: translateY(var(--grid-top-shift, 0px));
 }
 
 a {
@@ -296,6 +304,8 @@ a {
   pointer-events: none;
   --grid-cols: 7;
   --grid-rows: 5;
+  /* グリッド全体を比率を変えずに下げる（上部にロゴ／ハンバーガー余白を確保） */
+  transform: translateY(var(--grid-top-shift, 0px));
 }
 
 .cross-plane {
