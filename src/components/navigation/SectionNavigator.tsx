@@ -17,8 +17,10 @@ import {
   SECTION_INDEX,
   SERVICE_MOMENTUM_GUARD_MS,
   touchThreshold,
+  touchThresholdAtScrollEdge,
   touchThresholdCoarse,
   wheelThreshold,
+  wheelThresholdAtScrollEdge,
   getContactKeyboardScrollRoot,
   isContactFormInteractionTarget,
   resetServiceScrollInstant,
@@ -223,6 +225,7 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
   const moveBy = useCallback(
     (delta: -1 | 1) => {
       if (!canMove()) return;
+      if (isSectionTrackTransitioning()) return;
       setTransitionEnabled(true);
       const targetTrackIndex = virtualIndexRef.current + delta;
       beginSectionSlide(targetTrackIndex);
@@ -238,12 +241,56 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
   const isContactActive = activeIndex === SECTION_INDEX.contact;
 
   const getServiceScrollEdges = useCallback((node: HTMLElement) => {
-    const atTop = node.scrollTop <= 2;
+    const edgeSlack = 6;
+    const atTop = node.scrollTop <= edgeSlack;
     const atBottom =
-      node.scrollTop + node.clientHeight >= node.scrollHeight - 2;
-    const canScroll = node.scrollHeight > node.clientHeight + 4;
+      node.scrollTop + node.clientHeight >= node.scrollHeight - edgeSlack;
+    const canScroll = node.scrollHeight > node.clientHeight + edgeSlack;
     return { atTop, atBottom, canScroll };
   }, []);
+
+  /** 内部スクロール端でセクション遷移しようとしているか */
+  const isAtScrollEdgeForSectionExit = useCallback(
+    (deltaY: number) => {
+      if (deltaY === 0) return false;
+
+      if (isServiceActive) {
+        const scrollEl = serviceScrollRef.current;
+        if (scrollEl) {
+          const { atTop, atBottom, canScroll } = getServiceScrollEdges(scrollEl);
+          if (canScroll) {
+            if (deltaY > 0 && atBottom) return true;
+            if (deltaY < 0 && atTop) return true;
+          }
+        }
+      }
+
+      if (isContactActive) {
+        const contactScrollEl = getContactKeyboardScrollRoot();
+        if (contactScrollEl) {
+          const { atTop, atBottom, canScroll } =
+            getServiceScrollEdges(contactScrollEl);
+          if (canScroll) {
+            if (deltaY > 0 && atBottom) return true;
+            if (deltaY < 0 && atTop) return true;
+          }
+        }
+      }
+
+      return false;
+    },
+    [getServiceScrollEdges, isContactActive, isServiceActive],
+  );
+
+  const passesWheelThreshold = useCallback(
+    (deltaY: number) => {
+      const threshold = isAtScrollEdgeForSectionExit(deltaY)
+        ? wheelThresholdAtScrollEdge
+        : wheelThreshold;
+      return Math.abs(deltaY) >= threshold;
+    },
+    [isAtScrollEdgeForSectionExit],
+  );
 
   const scrollServiceBy = useCallback(
     (deltaY: number, behavior: ScrollBehavior = "auto") => {
@@ -311,7 +358,7 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
 
     const onContactFormWheelCapture = (event: WheelEvent) => {
       if (!isContactFormInteractionTarget(event.target)) return;
-      if (Math.abs(event.deltaY) < wheelThreshold) return;
+      if (!passesWheelThreshold(event.deltaY)) return;
       event.preventDefault();
       event.stopPropagation();
       moveBy(event.deltaY > 0 ? 1 : -1);
@@ -342,7 +389,7 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
       });
       mq.removeEventListener("change", onMqChange);
     };
-  }, [isContactActive, moveBy]);
+  }, [isContactActive, moveBy, passesWheelThreshold]);
 
   /* メッセージ / Approach → サービス: FV を scrollTop=0 に揃え（侵入時の上部ガタつき防止） */
   useLayoutEffect(() => {
@@ -362,7 +409,7 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
 
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) < wheelThreshold) return;
+      if (!passesWheelThreshold(event.deltaY)) return;
 
       const wheelTarget = event.target;
       const isPcGrid = window.matchMedia(mediaQueries.grid).matches;
@@ -478,13 +525,24 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
 
         if (canScroll && inScroll) {
           serviceTouchUsedNativeRef.current = true;
-          /* 端でのみ document のバウンスを抑え、touchend でセクション遷移 */
+          /* 端では小さなスワイプで即セクション遷移（touchend 待ちのラグを削減） */
           if (atTop && delta < 0) {
             serviceTouchUsedNativeRef.current = false;
             event.preventDefault();
-          } else if (atBottom && delta > 0) {
+            if (Math.abs(delta) >= touchThresholdAtScrollEdge) {
+              touchStartYRef.current = null;
+              moveBy(-1);
+            }
+            return;
+          }
+          if (atBottom && delta > 0) {
             serviceTouchUsedNativeRef.current = false;
             event.preventDefault();
+            if (delta >= touchThresholdAtScrollEdge) {
+              touchStartYRef.current = null;
+              moveBy(1);
+            }
+            return;
           }
           return;
         }
@@ -534,7 +592,9 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
 
       const endY = event.changedTouches[0]?.clientY ?? startY;
       const delta = startY - endY;
-      const threshold = getTouchSwipeThreshold();
+      const threshold = isAtScrollEdgeForSectionExit(delta)
+        ? touchThresholdAtScrollEdge
+        : getTouchSwipeThreshold();
       if (Math.abs(delta) < threshold) return;
 
       if (isContactActive) {
@@ -618,9 +678,11 @@ export function SectionNavigator({ onActiveIndexChange }: Props) {
     };
   }, [
     getServiceScrollEdges,
+    isAtScrollEdgeForSectionExit,
     isContactActive,
     isServiceActive,
     moveBy,
+    passesWheelThreshold,
     resolveServiceScroll,
     scrollServiceBy,
   ]);

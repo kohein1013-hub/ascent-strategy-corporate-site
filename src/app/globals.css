@@ -4364,7 +4364,7 @@ a {
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   padding: 0;
   scrollbar-width: thin;
 }

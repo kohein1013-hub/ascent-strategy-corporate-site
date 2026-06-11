@@ -20,13 +20,18 @@ export const SECTION_INDEX: Record<SectionId, number> = sectionIds.reduce(
   {} as Record<SectionId, number>,
 );
 
-export const navigationCooldownMs = 940;
+/** スライド中の二重起動防止（SP 0.72s / PC 1.02s より短く、端スクロール後の待ちを減らす） */
+export const navigationCooldownMs = 760;
 /** メッセージ→サービス直後、トラックパッド慣性が内部スクロールに乗らないようにする時間 */
-export const SERVICE_MOMENTUM_GUARD_MS = 480;
-export const wheelThreshold = 44;
-export const touchThreshold = 62;
+export const SERVICE_MOMENTUM_GUARD_MS = 280;
+export const wheelThreshold = 36;
+/** 内部スクロール端で次セクションへ渡すとき（小さなホイールでも反応） */
+export const wheelThresholdAtScrollEdge = 10;
+export const touchThreshold = 48;
 /** タッチデバイス（pointer: coarse）向けスワイプ判定 */
-export const touchThresholdCoarse = 44;
+export const touchThresholdCoarse = 32;
+/** 内部スクロール端でのセクション遷移（touchend / touchmove） */
+export const touchThresholdAtScrollEdge = 24;
 
 const CONTACT_FORM_INTERACTIVE_SELECTOR =
   "input, textarea, button, select, a, label";
