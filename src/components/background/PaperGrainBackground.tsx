@@ -18,8 +18,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCoarsePointer } from "@/lib/useCoarsePointer";
 import { grainColorBack, sectionPalettes } from "./section-palettes";
 
-const SPHERE_SCALE_MIN = 1.62;
-const SPHERE_SCALE_MAX = 2.12;
+const SPHERE_SCALE_MIN = 1.38;
+const SPHERE_SCALE_MAX = 1.82;
 const SPHERE_SCALE_DEFAULT = (SPHERE_SCALE_MIN + SPHERE_SCALE_MAX) / 2;
 const INITIAL_GRAIN_FRAME_MS = 4_200;
 const NOISE_CAP = 0.014;
@@ -88,8 +88,8 @@ function buildUniforms(palette: readonly string[]) {
     u_colorBack: getShaderColorFromString(grainColorBack),
     u_colors: palette.map(getShaderColorFromString),
     u_colorsCount: palette.length,
-    u_softness: 0.24,
-    u_intensity: 0.12,
+    u_softness: 0.2,
+    u_intensity: 0.14,
     u_noise: NOISE_BASE,
     u_shape: GrainGradientShapes.sphere,
     u_noiseTexture: getShaderNoiseTexture(),
@@ -121,8 +121,8 @@ function CssGrainBackground({
   const palette = sectionPalettes[activeIndex % sectionPalettes.length];
   const orange = palette[0];
   const blue = palette[palette.length - 1];
-  const c1 = hexToRgba(orange, 0.66);
-  const c2 = hexToRgba(blue, 0.48);
+  const c1 = hexToRgba(orange, 0.62);
+  const c2 = hexToRgba(blue, 0.55);
 
   return (
     <div className="paper-grain-bg paper-grain-bg--css" aria-hidden>
@@ -130,7 +130,7 @@ function CssGrainBackground({
         className="paper-grain-bg__blob paper-grain-bg__blob--a"
         style={
           {
-            background: `radial-gradient(circle at 38% 52%, ${c1}, transparent 72%)`,
+            background: `radial-gradient(circle at 36% 54%, ${c1}, transparent 70%)`,
           } as CSSProperties
         }
       />
@@ -138,7 +138,7 @@ function CssGrainBackground({
         className="paper-grain-bg__blob paper-grain-bg__blob--b"
         style={
           {
-            background: `radial-gradient(circle at 76% 28%, ${c2}, transparent 56%)`,
+            background: `radial-gradient(circle at 74% 26%, ${c2}, transparent 62%)`,
           } as CSSProperties
         }
       />
