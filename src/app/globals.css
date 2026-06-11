@@ -3,8 +3,8 @@
 :root {
   /* 試験: 外周を黒寄りに。復元する場合は #080b15 に戻す */
   --surface: #040405;
-  --text-primary: #f6f8ff;
-  --text-secondary: rgba(236, 238, 251, 0.78);
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
   --line: rgba(192, 201, 255, 0.25);
   --card-bg: rgba(8, 11, 21, 0.48);
   --card-border: rgba(211, 217, 252, 0.22);
@@ -12,7 +12,7 @@
   --cross-inset: 30px;
   /* 十字フォーカス・アーム（GridOverlay .cross-focus-arm と共有） */
   --cross-arm-line-size: 1px;
-  --cross-arm-line-color: rgba(255, 255, 255, 0.95);
+  --cross-arm-line-color: #ffffff;
   --cross-arm-line-glow: 0 0 8px rgba(255, 255, 255, 0.34);
   /* 左レール右端とオーバーレイ左端（7分割の縦軸側）の隙間 */
   --menu-rail-gap-from-grid: 3px;
@@ -1009,7 +1009,7 @@ a {
   font-size: clamp(0.68rem, 0.95vw, 0.82rem);
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: rgba(232, 236, 255, 0.72);
+  color: #ffffff;
 }
 
 /* ロゴを固定ヘッダーへ移した後も ASM の基準位置を維持する（視覚のみ非表示） */
@@ -1045,7 +1045,7 @@ a {
 }
 
 .site-header__brand:hover {
-  color: rgba(244, 247, 255, 0.92);
+  color: #ffffff;
 }
 
 .site-header__brand:focus-visible {
@@ -1094,7 +1094,7 @@ a {
   font-weight: 500;
   line-height: 1.45;
   letter-spacing: 0.01em;
-  color: rgba(244, 247, 255, 0.92);
+  color: #ffffff;
   max-width: min(31rem, 100%);
 }
 
@@ -1104,7 +1104,7 @@ a {
   font-family: var(--font-en-text);
   font-size: clamp(0.7rem, 0.82vw, 0.82rem);
   line-height: 1.55;
-  color: rgba(233, 237, 255, 0.82);
+  color: #ffffff;
 }
 
 .hero-jp-wrap {
@@ -1126,14 +1126,14 @@ a {
   font-size: clamp(1rem, 1.45vw, 1.52rem);
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: rgba(248, 251, 255, 0.97);
+  color: #ffffff;
 }
 
 .hero-jp-body {
   margin-top: 0.4rem;
   font-size: clamp(0.72rem, 0.92vw, 0.88rem);
   line-height: 1.62;
-  color: rgba(228, 233, 253, 0.86);
+  color: #ffffff;
 }
 
 @supports (text-spacing-trim: trim-start) {
@@ -1157,7 +1157,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(232, 236, 255, 0.88);
+  color: #ffffff;
 }
 
 /* キャッチ：Message / Service / Approach の日本語タイトル共通サイズ */
@@ -1382,7 +1382,7 @@ a {
   font-weight: 700;
   line-height: 1.45;
   letter-spacing: 0.01em;
-  color: rgba(244, 247, 255, 0.95);
+  color: #ffffff;
 }
 
 .message-en-body {
@@ -1614,7 +1614,7 @@ a {
   font-size: clamp(0.8rem, 1vw, 0.9rem);
   text-align: right;
   letter-spacing: 0.04em;
-  color: rgba(220, 226, 255, 0.72);
+  color: #ffffff;
 }
 
 /* flow: max-width 768px — SP フローモード（縦積み・枠線 UI・ASM 通常フロー） */
@@ -1637,7 +1637,7 @@ a {
     /* 右端ダッシュ手前（ハイフンが切れない余白） */
     --message-en-sp-inset-right: 8px;
     /*
-     * ASMN（Message SP）: 英語ブロック直上（MessageSection 配置後に同期）。
+     * ASMN（Message SP）: 英語ブロック直���（MessageSection 配置後に同期）。
      * --message-asmn-en-offset-x: 英語ブロック左端からの横ずれ
      */
     --message-asmn-above-en-gap: 83px;
@@ -1649,7 +1649,7 @@ a {
     /* SP Message: 全要素同一リビール（位置確定後・同時） */
     --message-reveal-unified-delay: 0s;
     --message-reveal-unified-duration: 0.52s;
-    /* PC 用に JSX の reveal-delay-* は維持（SP では未使用） */
+    /* PC 用に JSX の reveal-delay-* は維持（SP で���未使用） */
     --message-reveal-stagger-1: 0s;
     --message-reveal-stagger-2: 0.04s;
     --message-reveal-stagger-3: 0.07s;
@@ -2499,7 +2499,7 @@ a {
 
 .company-shell .message-titles-stack {
   /*
-   * 十字 1/6 の ASMN 直下（AsmCrossEyebrow と同じ focusY 基準）。
+   * 十字 1/6 の ASMN 直下（AsmCrossEyebrow と��じ focusY 基準）。
    * 表は absolute のため margin 押し下げは使わず、重なりで隠れないよう z-index を上げる。
    */
   position: absolute;
@@ -2775,7 +2775,7 @@ a {
   font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 1.45;
-  color: rgba(200, 208, 236, 0.78);
+  color: #ffffff;
   white-space: nowrap;
 }
 
@@ -2790,7 +2790,7 @@ a {
   font-weight: 400;
   line-height: 1.55;
   letter-spacing: 0.02em;
-  color: rgba(236, 238, 251, 0.92);
+  color: #ffffff;
 }
 
 /* ── Contact：Company と同型の＋交差罫線フォーム ── */
@@ -2846,8 +2846,8 @@ a {
   --contact-field-font-weight: 500;
   --contact-field-line-height: 1.45;
   --contact-field-letter-spacing: 0.02em;
-  --contact-field-muted-color: rgba(200, 208, 236, 0.78);
-  --contact-field-value-color: rgba(236, 238, 251, 0.92);
+  --contact-field-muted-color: #ffffff;
+  --contact-field-value-color: #ffffff;
   --contact-field-pad-inline-end: clamp(0.55rem, 1.2vw, 0.85rem);
   --contact-label-pad-inline-start: var(--contact-field-pad-inline-end);
 }
@@ -3108,7 +3108,7 @@ a {
   font-weight: 400;
   line-height: 1.65;
   letter-spacing: 0.02em;
-  color: rgba(200, 208, 236, 0.78);
+  color: #ffffff;
 }
 
 .contact-form-row {
@@ -3290,7 +3290,7 @@ a {
   -webkit-overflow-scrolling: touch;
   resize: none;
   scrollbar-width: thin;
-  scrollbar-color: rgba(200, 208, 236, 0.5) transparent;
+  scrollbar-color: #ffffff transparent;
 }
 
 .contact-form-message-grid .contact-form-control--textarea:placeholder-shown {
@@ -3341,14 +3341,14 @@ a {
   border: none;
   background: transparent;
   cursor: pointer;
-  color: rgba(200, 208, 236, 0.45);
+  color: #ffffff;
   transition: color 0.35s ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .contact-form-terms:hover,
   .contact-form-terms:focus-visible {
-    color: rgba(236, 238, 251, 0.92);
+    color: #ffffff;
   }
 }
 
@@ -3359,11 +3359,11 @@ a {
 
 @media (max-width: 768px), (hover: none) {
   .contact-form-terms {
-    color: rgba(236, 238, 251, 0.92);
+    color: #ffffff;
   }
 
   .contact-form-terms:active {
-    color: rgba(255, 255, 255, 0.98);
+    color: #ffffff;
   }
 }
 
@@ -3475,7 +3475,7 @@ a {
   font-size: clamp(0.82rem, 1.05vw, 0.96rem);
   font-weight: 500;
   letter-spacing: 0.06em;
-  color: rgba(236, 238, 251, 0.92);
+  color: #ffffff;
   mix-blend-mode: normal;
   transition: color 0.35s ease;
 }
@@ -3493,7 +3493,7 @@ a {
 
   .contact-form-send-cell:hover .contact-form-send-label,
   .contact-form-send-cell:focus-visible .contact-form-send-label {
-    color: rgba(255, 255, 255, 0.98);
+    color: #ffffff;
   }
 
   .contact-form-send-cell:focus-visible {
@@ -3508,7 +3508,7 @@ a {
   }
 
   .contact-form-send-cell:active .contact-form-send-label {
-    color: rgba(255, 255, 255, 0.98);
+    color: #ffffff;
   }
 }
 
@@ -3901,7 +3901,7 @@ a {
     line-height: 1.48;
     letter-spacing: 0.02em;
     text-align: left;
-    color: rgba(228, 232, 250, 0.88);
+    color: #ffffff;
     scrollbar-width: thin;
     transition: opacity var(--approach-chip-reveal-duration) ease;
   }
@@ -3935,7 +3935,7 @@ a {
   font-size: clamp(0.58rem, 0.72vw, 0.65rem);
   font-weight: 600;
   letter-spacing: 0.14em;
-  color: rgba(200, 208, 236, 0.72);
+  color: #ffffff;
 }
 
 .network-list {
@@ -3966,7 +3966,7 @@ a {
   font-weight: 600;
   letter-spacing: 0.06em;
   line-height: 1.25;
-  color: rgba(236, 238, 251, 0.92);
+  color: #ffffff;
 }
 
 .network-list-detail {
@@ -3975,7 +3975,7 @@ a {
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: 0.02em;
-  color: rgba(210, 218, 242, 0.82);
+  color: #ffffff;
   opacity: 0;
   transform: translateX(-10px);
   transition:
@@ -4321,7 +4321,7 @@ a {
   }
 
   /*
-   * コンテンツ（リード＋チップ）：幅・位置は JS（横 1〜7 列・縦は上端〜タイトル帯直上）。
+   * コンテンツ（リード＋チップ）：幅・位置は JS（横 1〜7 列・縦は上端��タイトル帯直上）。
    * 見出し・キャッチ・ASMN とは独立。
    */
   .network-shell .network-content-column {
@@ -4400,7 +4400,7 @@ a {
   scrollbar-width: thin;
 }
 
-/* ファーストビュー：見出しのみ（水平インセットは .section-shell） */
+/* ファーストビュー：見��しのみ（水平インセットは .section-shell） */
 .service-fv {
   position: relative;
   display: flex;
@@ -4519,7 +4519,7 @@ a {
   font-size: clamp(0.72rem, 1.2vw, 0.86rem);
   font-weight: 500;
   line-height: 1.48;
-  color: rgba(230, 238, 255, 0.9);
+  color: #ffffff;
 }
 
 .service-body-stack .service-body {
@@ -4567,7 +4567,7 @@ a {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: clamp(0.6rem, 0.92vw, 0.66rem);
   line-height: 1.58;
-  color: rgba(200, 210, 230, 0.65);
+  color: #ffffff;
 }
 
 /*
@@ -4755,7 +4755,7 @@ a {
   overflow-wrap: anywhere;
   word-break: normal;
   hyphens: manual;
-  color: rgba(228, 232, 250, 0.88);
+  color: #ffffff;
   scrollbar-width: thin;
 }
 
@@ -4782,7 +4782,7 @@ a {
   }
 }
 
-/* Network SP のみ：Approach チップと同一インタラクション（PC には適用しない） */
+/* Network SP のみ：Approach チップと同一インタラクション（PC ��は適用しない） */
 @media (max-width: 768px) {
   .network-shell .network-chip {
     --approach-chip-reveal-duration: 0.18s;
@@ -4853,7 +4853,7 @@ a {
     width: 100%;
     min-width: 0;
     text-align: center;
-    color: rgba(236, 238, 251, 0.92);
+    color: #ffffff;
     font-family: var(--font-ja-text);
     font-size: clamp(0.52rem, 2.3vw, 0.62rem);
     font-weight: 600;
@@ -4897,7 +4897,7 @@ a {
     line-height: 1.48;
     letter-spacing: 0.02em;
     text-align: left;
-    color: rgba(210, 218, 242, 0.88);
+    color: #ffffff;
     scrollbar-width: thin;
   }
 
@@ -5404,7 +5404,7 @@ a {
     --contact-plane-w: calc(100vw - 2 * var(--cross-inset));
     --contact-grid-cols: 8;
     --contact-label-span: 2;
-    /* Company 確定値に合わせる（見出し・キャッチは変更しない） */
+    /* Company 確定値に合わせ���（見出し・キャッチは変更しない） */
     --contact-asmn-lift: 43px;
     --contact-asmn-sp-offset-down: 10px;
     --contact-field-font-size: clamp(0.58rem, 2.35vw, 0.68rem);
@@ -5817,7 +5817,7 @@ a {
   }
 
   .contact-form-terms {
-    color: rgba(236, 238, 251, 0.92);
+    color: #ffffff;
     transition: none;
   }
 
