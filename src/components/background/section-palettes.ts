@@ -26,5 +26,10 @@ export const sectionPalettes = [
   paletteOrangeRoyalBlue("#e25028"),
 ] as const;
 
-/** Grain の背面。オレンジだとブルーが潰れるため、暗いロイヤルブルー系 */
-export const grainColorBack = "#152a6e";
+/**
+ * Grain の背面（スフィアの外側に出る色）。
+ * 紺色を出さず、オレンジ × ロイヤルブルーの二色だけに見せるため
+ * 背面色そのものをロイヤルブルーにする。これでスフィア外側も
+ * ロイヤルブルーになり、左側に紺色のスフィア縁が出なくなる。
+ */
+export const grainColorBack = grainRoyalBlue;

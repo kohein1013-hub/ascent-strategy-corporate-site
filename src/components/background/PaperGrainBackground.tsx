@@ -18,21 +18,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCoarsePointer } from "@/lib/useCoarsePointer";
 import { grainColorBack, sectionPalettes } from "./section-palettes";
 
-const SPHERE_SCALE_MIN = 1.38;
-const SPHERE_SCALE_MAX = 1.82;
+const SPHERE_SCALE_MIN = 1.7;
+const SPHERE_SCALE_MAX = 2.15;
 const SPHERE_SCALE_DEFAULT = (SPHERE_SCALE_MIN + SPHERE_SCALE_MAX) / 2;
 const INITIAL_GRAIN_FRAME_MS = 4_200;
 const NOISE_CAP = 0.014;
 const NOISE_BASE = 0.008;
 /** ブルーのハイライトが画面を横切る幅（小さすぎると画面外に出る） */
-const OFFSET_RANGE = 0.34;
+const OFFSET_RANGE = 0.22;
 const SPEED_SCALE = 0.72;
 /**
- * 画面占有比をオレンジ 70% / ブルー 30%（時間平均）に寄せるためのバイアス。
- * ブルーのスフィアを常に右下寄りに置き、強度を抑えてオレンジを主役にする。
+ * 背面色がロイヤルブルーになったため、オレンジのスフィアを画面の約 70% に
+ * 広げ、ロイヤルブルーが縁の約 30% に収まるよう中央やや右下に寄せる。
+ * 値を大きくしすぎるとオレンジが画面外へ寄り、ブルーが増える。
  */
-const BLUE_OFFSET_BIAS_X = 0.22;
-const BLUE_OFFSET_BIAS_Y = 0.2;
+const BLUE_OFFSET_BIAS_X = 0.08;
+const BLUE_OFFSET_BIAS_Y = 0.06;
 
 type Props = {
   activeIndex: number;
