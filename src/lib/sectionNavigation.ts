@@ -45,14 +45,14 @@ export const SECTION_MENU_ITEMS = sectionIds.map((id, index) => ({
   label: SECTION_LABELS[id],
 }));
 
-/** スライド中の二重起動防止（SP 0.72s / PC 1.02s より短く、端スクロール後の待ちを減らす） */
-export const navigationCooldownMs = 760;
+/** スライド中の二重起動防止（SP 0.68s / PC 0.92s より短く、端スクロール後の待ちを減らす） */
+export const navigationCooldownMs = 660;
 /** メッセージ→サービス直後、トラックパッド慣性が内部スクロールに乗らないようにする時間 */
 export const SERVICE_MOMENTUM_GUARD_MS = 280;
-export const wheelThreshold = 36;
+export const wheelThreshold = 22;
 /** 内部スクロール端で次セクションへ渡すとき（小さなホイールでも反応） */
-export const wheelThresholdAtScrollEdge = 10;
-export const touchThreshold = 48;
+export const wheelThresholdAtScrollEdge = 8;
+export const touchThreshold = 42;
 /** タッチデバイス（pointer: coarse）向けスワイプ判定 */
 export const touchThresholdCoarse = 32;
 /** 内部スクロール端でのセクション遷移（touchend / touchmove） */
