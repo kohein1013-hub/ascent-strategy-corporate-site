@@ -122,6 +122,47 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** "#rrggbb" → [r, g, b]（0..255） */
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const c = (v: number) =>
+    Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+  return `#${c(r)}${c(g)}${c(b)}`;
+}
+
+/** 2 つのパレット間を t（0..1）で線形補間し、shader 用の色配列を返す */
+function lerpPalette(
+  from: readonly string[],
+  to: readonly string[],
+  t: number,
+): string[] {
+  const count = Math.max(from.length, to.length);
+  const out: string[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const a = hexToRgb(from[Math.min(i, from.length - 1)]);
+    const b = hexToRgb(to[Math.min(i, to.length - 1)]);
+    out.push(
+      rgbToHex(
+        lerp(a[0], b[0], t),
+        lerp(a[1], b[1], t),
+        lerp(a[2], b[2], t),
+      ),
+    );
+  }
+  return out;
+}
+
+/** セクション遷移に合わせた背景パレットのクロスフェード時間 */
+const PALETTE_FADE_MS = 850;
+
 function CssGrainBackground({
   activeIndex,
 }: {
@@ -168,6 +209,8 @@ function WebGlGrainBackground({
   const motionTo = useRef<Motion | null>(null);
   const segmentStart = useRef(0);
   const segmentMs = useRef(4000);
+  /** 現在画面に表示中のパレット（クロスフェードの起点） */
+  const displayedPalette = useRef<readonly string[] | null>(null);
 
   useEffect(() => {
     const el = hostRef.current;
@@ -272,11 +315,40 @@ function WebGlGrainBackground({
     if (!el || !isPaperShaderElement(el)) return;
     const mount = el.paperShaderMount;
     if (!mount) return;
-    mount.setUniforms({
-      u_colorBack: getShaderColorFromString(grainColorBack),
-      u_colors: palette.map(getShaderColorFromString),
-      u_colorsCount: palette.length,
-    });
+
+    // 現在表示中のパレット（前回の色）から新パレットへ滑らかにクロスフェード。
+    // パッと切り替わらないよう、PALETTE_FADE_MS かけて色を線形補間する。
+    const fromPalette = displayedPalette.current ?? palette;
+    const toPalette = palette;
+    displayedPalette.current = toPalette;
+
+    // 初回はフェード不要（同色 or 初期化）
+    const isSame = fromPalette.every((c, i) => c === toPalette[i]);
+    if (isSame) {
+      mount.setUniforms({
+        u_colors: toPalette.map(getShaderColorFromString),
+        u_colorsCount: toPalette.length,
+      });
+      return;
+    }
+
+    const start = performance.now();
+    let raf = 0;
+    const animate = (now: number) => {
+      const t = smoothstep01((now - start) / PALETTE_FADE_MS);
+      const blended = lerpPalette(fromPalette, toPalette, t);
+      mount.setUniforms({
+        u_colorBack: getShaderColorFromString(grainColorBack),
+        u_colors: blended.map(getShaderColorFromString),
+        u_colorsCount: blended.length,
+      });
+      if (t < 1) {
+        raf = requestAnimationFrame(animate);
+      }
+    };
+    raf = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(raf);
   }, [palette]);
 
   return (

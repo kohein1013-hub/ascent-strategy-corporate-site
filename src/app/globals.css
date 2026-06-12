@@ -457,14 +457,15 @@ a {
 .section-track {
   position: relative;
   z-index: 3;
-  transition: transform 1.02s cubic-bezier(0.22, 0.64, 0.18, 1);
+  /* easeOutExpo 系の滑らかな減速（参考サイトの遷移感に合わせる） */
+  transition: transform 0.92s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 
-/* SP: セクション侵入〜リビール開始までの待ちを短縮（PC は 1.02s のまま） */
+/* SP: セクション侵入〜リビール開始までの待ちを短縮（PC は 0.92s のまま） */
 @media (max-width: 768px) {
   .section-track {
-    transition-duration: 0.72s;
+    transition-duration: 0.68s;
   }
 
   /*
@@ -514,7 +515,7 @@ a {
   .section-track.is-transitioning > .section-frame.is-slide-source {
     z-index: 4;
     pointer-events: none;
-    transition: transform 0.72s cubic-bezier(0.22, 0.64, 0.18, 1);
+    transition: transform 0.68s cubic-bezier(0.16, 1, 0.3, 1);
     transform: translate3d(
       0,
       calc(
@@ -1604,6 +1605,24 @@ a {
   }
 
   /*
+   * PC Message: message-entry-ready（=英語/ASMN 座標と --message-cross-x が確定）が
+   * 付くまでは本文・見出し・日本語ブロックを描画しない。
+   * is-active は付いていても entry-ready が 2 フレーム遅れて付くため、その隙間に
+   * 未確定座標（左寄せ）の日本語コンテンツが一瞬見える Hero→Message のチラつきを防ぐ。
+   */
+  .section-frame:is(.is-active, .is-virtual-active)
+    .section-shell--message:not(.message-entry-ready)
+    :is(
+      .message-unified-reveal.reveal-item,
+      .message-jp-axis,
+      .message-col--jp,
+      .message-en-wrap
+    ) {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /*
    * PC Message: 見出し・ASMN・本文を is-active で段階リビール（下から 18px + フェード・transition）。
    * ASMN（PC）は Hero 同型（hero-bilingual-reveal + hero-asmn-reveal）。
    */
@@ -1709,7 +1728,7 @@ a {
   }
 
   /*
-   * PC Service / Approach / Network ASMN: Message と同型（*-pc-asm-ready → hero-asmn-reveal）。
+   * PC Service / Approach / Network ASMN: Message と同型（*-pc-asm-ready → hero-asmn-reveal）��
    */
   .section-frame.is-active
     .service-shell:not(.service-pc-asm-ready)
